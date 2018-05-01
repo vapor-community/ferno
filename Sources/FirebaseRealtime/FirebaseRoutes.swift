@@ -7,15 +7,57 @@
 
 import Vapor
 
+//Firebase Path Enum
+public enum FirebasePath {
+    case child(String)
+    case json
+}
+
+extension Array where Element == FirebasePath {
+
+    var childPath: String {
+        var path = ""
+        self.forEach { child in
+            switch child {
+            case .child(let string):
+                path.append("/\(string)")
+            case .json:
+                path.append(".json")
+            }
+        }
+        return path
+    }
+}
+
+//Firebase Value Enum
+public enum FirebaseValue {
+
+    case number(Int)
+    case string(String)
+    case boolean(Bool)
+
+    func stringForm() -> String {
+        switch self {
+        case .boolean(let bool):
+            return bool.description
+        case .number(let int):
+            return int.description
+        case .string(let str):
+            return "\"\(str)\""
+        }
+    }
+}
+
+//Firebase Query Params Enum
+
 public enum FirebaseQueryParams {
-    case accessToken(String)
     case shallow(Bool)
-    case orderBy(String)
-    case limitToFirst(String)
-    case limitToLast(String)
-    case startAt(String)
-    case endAt(String)
-    case equalTo(String)
+    case orderBy(FirebaseValue)
+    case limitToFirst(FirebaseValue)
+    case limitToLast(FirebaseValue)
+    case startAt(FirebaseValue)
+    case endAt(FirebaseValue)
+    case equalTo(FirebaseValue)
 }
 
 extension FirebaseQueryParams: RawRepresentable {
@@ -23,14 +65,13 @@ extension FirebaseQueryParams: RawRepresentable {
 
     public init?(rawValue: RawValue) {
         switch rawValue {
-        case "access_token": self = .accessToken("")
         case "shallow": self = .shallow(false)
-        case "orderBy": self = .orderBy("")
-        case "limitToFirst": self = .limitToFirst("")
-        case "limitToLast": self = .limitToLast("")
-        case "startAt": self = .startAt("")
-        case "endAt": self = .endAt("")
-        case "equalTo": self = .equalTo("")
+        case "orderBy": self = .orderBy(.boolean(true))
+        case "limitToFirst": self = .limitToFirst(.string(""))
+        case "limitToLast": self = .limitToLast(.string(""))
+        case "startAt": self = .startAt(.string(""))
+        case "endAt": self = .endAt(.string(""))
+        case "equalTo": self = .equalTo(.string(""))
         default:
             return nil
         }
@@ -38,7 +79,6 @@ extension FirebaseQueryParams: RawRepresentable {
 
     public var rawValue: RawValue {
         switch self {
-        case .accessToken: return "access_token"
         case .shallow: return "shallow"
         case .orderBy: return "orderBy"
         case .limitToFirst: return "limitToFirst"
@@ -50,6 +90,32 @@ extension FirebaseQueryParams: RawRepresentable {
     }
 }
 
+extension Array where Element == FirebaseQueryParams {
+
+    func createQuery(authKey: String) -> String {
+        let queryString: String = self.map { param in
+            let key = param.rawValue
+            let value: String = {
+                switch param {
+                case .shallow(let val):
+                    return val.description
+
+                case .orderBy(let val),
+                     .limitToFirst(let val),
+                     .limitToLast(let val),
+                     .startAt(let val),
+                     .endAt(let val),
+                     .equalTo(let val):
+                    return val.stringForm()
+                }
+            }()
+
+            return "\(key)=\(value)"
+            }.joined(separator: "&")
+        return queryString + "&auth=\(authKey)"
+    }
+}
+
 
 public struct FirebaseRoutes {
     private let request: FirebaseRequest
@@ -58,10 +124,10 @@ public struct FirebaseRoutes {
         self.request = request
     }
 
-    public func retrieve<F: Decodable>(queryItems: [FirebaseQueryParams]? = nil, appendedPath: String) throws -> Future<F> {
+    public func retrieve<F: Decodable>(req: Request, queryItems: [FirebaseQueryParams]? = nil, appendedPath: [FirebasePath]) throws -> Future<[F]> {
         let query = queryItems == nil ? [] : queryItems!
 
-        return try request.send(method: .GET, path: appendedPath, query: query)
+        return try request.send(req: Request ,method: .GET, path: appendedPath, query: query, body: "", headers: [:])
 
     }
 }

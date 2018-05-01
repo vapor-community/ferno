@@ -20,6 +20,8 @@ public struct FirebaseConfig: Service {
 
 public final class FirebaseProvider: Provider {
 
+    public init() { }
+
     public func register(_ services: inout Services) throws {
         services.register { container -> FirebaseClient in
             let httpClient = try container.make(Client.self)
