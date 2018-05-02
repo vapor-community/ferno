@@ -1,7 +1,7 @@
 import Vapor
 
 public protocol FirebaseRequest {
-    func send<F: Decodable>(req: Request,method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<F>
+    func send<F: Content>(req: Request,method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<F>
 }
 
 public class FirebaseAPIRequest: FirebaseRequest {
@@ -17,7 +17,7 @@ public class FirebaseAPIRequest: FirebaseRequest {
         self.basePath = basePath
     }
 
-    public func send<F: Decodable>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<F> {
+    public func send<F: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<F> {
         let request = self.createRequest(method: method, path: path, query: query, body: body, headers: headers)
         return try self.httpClient.respond(to: request).flatMap(to: F.self) { response in
             guard response.http.status == .ok else { throw FirebaseRealtimeError.requestFailed }
@@ -25,7 +25,7 @@ public class FirebaseAPIRequest: FirebaseRequest {
         }
     }
 
-    public func send<F: Decodable>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<[F]> {
+    public func send<F: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<[F]> {
         let request = self.createRequest(method: method, path: path, query: query, body: body, headers: headers)
         return try self.httpClient.respond(to: request).flatMap(to: [F].self) { response in
             guard response.http.status == .ok else { throw FirebaseRealtimeError.requestFailed }

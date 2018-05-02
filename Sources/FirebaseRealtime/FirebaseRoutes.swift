@@ -124,7 +124,7 @@ public struct FirebaseRoutes {
         self.request = request
     }
 
-    public func retrieve<F: Decodable>(req: Request, queryItems: [FirebaseQueryParams]? = nil, appendedPath: [FirebasePath]) throws -> Future<[F]> {
+    public func retrieve<F: Content>(req: Request, queryItems: [FirebaseQueryParams]? = nil, appendedPath: [FirebasePath]) throws -> Future<[F]> {
         let sendReq: Future<[F]> = try self.request.send(
             req: req,
             method: .GET,
@@ -135,7 +135,7 @@ public struct FirebaseRoutes {
         return sendReq
     }
 
-    public func retrieve<F: Decodable>(req: Request, queryItems: [FirebaseQueryParams]? = nil, appendedPath: [FirebasePath]) throws -> Future<F> {
+    public func retrieve<F: Content>(req: Request, queryItems: [FirebaseQueryParams]? = nil, appendedPath: [FirebasePath]) throws -> Future<F> {
         let sendReq: Future<F> = try self.request.send(
             req: req,
             method: .GET,
