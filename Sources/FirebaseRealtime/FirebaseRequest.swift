@@ -1,50 +1,118 @@
 import Vapor
+import JWT
+
+struct OAuthBody: Content {
+    var grant_type: String
+    var assertion: String
+}
+
+struct OAuthResponse: Content {
+    var access_token: String
+    var token_type: String
+    var expires_in: Int
+}
 
 public protocol FirebaseRequest {
-    func send<F: Decodable>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<F>
-    func sendMany<F: Decodable>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<[F]>
+    func delete(req: Request, method: HTTPMethod, path: [FirebasePath]) throws -> Future<Bool>
+    func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<F>
+    func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<[F]>
 }
 
 public class FirebaseAPIRequest: FirebaseRequest {
     private let decoder = JSONDecoder()
     private let httpClient: Client
-    private let authKey: String
     private let basePath: String
+    private let email: String
+    private let privateKey: String
+    private var expireDate: Date?
+    private var accessToken: String?
 
-    public init(httpClient: Client, authKey: String, basePath: String) {
+    public init(httpClient: Client, basePath: String, email: String, privateKey: String) {
         self.httpClient = httpClient
-        self.authKey = authKey
         self.basePath = basePath
+        self.email = email
+        self.privateKey = privateKey
+        self.expireDate = nil
+        self.accessToken = nil
     }
 
-    public func send<F: Decodable>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<F> {
-        let request = self.createRequest(method: method, path: path, query: query, body: body, headers: headers)
-        return try self.httpClient.respond(to: request).flatMap(to: F.self) { response in
-            guard response.http.status == .ok else { throw FirebaseRealtimeError.requestFailed }
-            return try self.decoder.decode(F.self, from: response.http, maxSize: 65_536, on: req)
-        }
+    public func delete(req: Request, method: HTTPMethod, path: [FirebasePath]) throws -> Future<Bool> {
+        return try self.createRequest(method: method, path: path, query: [], body: "", headers: [:]).flatMap({ request in
+            return try self.httpClient.respond(to: request).map({ response in
+                return response.http.status == .ok
+            })
+        })
     }
 
-    public func sendMany<F: Decodable>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) throws -> Future<[F]> {
-        let request = self.createRequest(method: method, path: path, query: query, body: body, headers: headers)
-        return try self.httpClient.respond(to: request).flatMap(to: [F].self) { response in
-            guard response.http.status == .ok else { throw FirebaseRealtimeError.requestFailed }
-            print(response.http.body)
-            return try self.decoder.decode([String: F].self, from: response.http, maxSize: 65_536, on: req).map(to: [F].self) { data in
-                return Array(data.values)
+    public func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<F> {
+        return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
+            return try self.httpClient.respond(to: request).flatMap(to: F.self) { response in
+                guard response.http.status == .ok else { throw FirebaseRealtimeError.requestFailed }
+                return try self.decoder.decode(F.self, from: response.http, maxSize: 65_536, on: req)
             }
-        }
+        })
+    }
+
+    public func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<[F]> {
+        return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
+            return try self.httpClient.respond(to: request).flatMap(to: [F].self) { response in
+                guard response.http.status == .ok else { throw FirebaseRealtimeError.requestFailed }
+                return try self.decoder.decode([String: F].self, from: response.http, maxSize: 65_536, on: req).map(to: [F].self) { data in
+                    return Array(data.values)
+                }
+            }
+        })
     }
 }
 
 extension FirebaseAPIRequest {
-    private func createRequest(method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: String, headers: HTTPHeaders) -> Request {
-        let encodedHTTPBody = HTTPBody(string: body)
-        let completePath = basePath + path.childPath
-        let queryString = query.createQuery(authKey: self.authKey)
-        let urlString = "\(completePath)?\(queryString)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-        print(urlString)
-        let request = HTTPRequest(method: method, url: urlString, headers: headers, body: encodedHTTPBody)
-        return Request(http: request, using: self.httpClient.container)
+    private func createRequest<T: Content>(method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders)throws -> Future<Request> {
+        return try getAccessToken().map({ (accessToken) in
+            let completePath = self.basePath + path.childPath
+            let queryString = query.createQuery(authKey: accessToken)
+            let urlString = "\(completePath)?\(queryString)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            print(urlString)
+            let request = Request(using: self.httpClient.container)
+            try request.content.encode(body)
+            request.http.method = method
+            request.http.headers = headers
+            request.http.url = URL(string: urlString)!
+            return request
+        })
+    }
+
+    private func createJWT() throws -> Data {
+        let header = JWTHeader(alg: "RS256", typ: "JWT")
+        let privateSigner = try JWTSigner.rs256(key: .private(pem: self.privateKey))
+        let currTime = Date()
+        let expireTime = currTime.addingTimeInterval(3600)
+        let payload = Payload(iss: .init(value: self.email), scope: ["https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/firebase.database"].joined(separator: " "), aud: "https://www.googleapis.com/oauth2/v4/token", exp: .init(value: expireTime), iat: .init(value: currTime))
+
+        var jwt = JWT(header: header, payload: payload)
+        self.expireDate = expireTime
+
+        return try jwt.sign(using: privateSigner)
+    }
+
+    private func getAccessToken() throws -> Future<String> {
+        if let expireDate = self.expireDate,  Calendar.current.compare(expireDate, to: Date(timeIntervalSinceNow: -120), toGranularity: .second) == .orderedDescending {
+            return Future.map(on: self.httpClient.container) { self.accessToken ?? "" }
+        }
+        //we need to refresh the token
+        let jwt = try createJWT()
+        var headers = HTTPHeaders()
+        headers.add(name: .contentType, value: "application/x-www-form-urlencoded")
+        let oauthBody = OAuthBody(grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: String.init(data: jwt, encoding: .utf8)!)
+        let req = Request(using: self.httpClient.container)
+        try req.content.encode(oauthBody, as: .urlEncodedForm)
+        req.http.url = URL(string: "https://www.googleapis.com/oauth2/v4/token")!
+        req.http.method = .POST
+        print(req.debugDescription)
+        return try self.httpClient.respond(to: req).flatMap(to: OAuthResponse.self) { result in
+            let oauthRes: Future<OAuthResponse> = try result.content.decode(OAuthResponse.self)
+            return oauthRes
+            }.map(to: String.self) { resp in
+                return resp.access_token
+        }
     }
 }

@@ -6,15 +6,37 @@
 //
 
 import Vapor
+import JWT
+
+struct Payload: JWTPayload {
+    var iss: IssuerClaim
+    var scope: String
+    var aud: String
+    var exp: ExpirationClaim
+    var iat: IssuedAtClaim
+
+
+    func verify() throws {
+        try exp.verify()
+    }
+}
+
+public struct AccessToken {
+    var accessToken: String
+    var email: String
+    var privateKey: String
+    var jwt: JWT<Payload>
+}
 
 public struct FirebaseConfig: Service {
-    public let authKey: String
     public let basePath: String
+    public let email: String
+    public let privateKey: String
 
-    public init(authKey: String, basePath: String) {
-        self.authKey = authKey
+    public init(basePath: String, email: String, privateKey: String) {
         self.basePath = basePath
-
+        self.email = email
+        self.privateKey = privateKey
     }
 }
 
@@ -26,7 +48,7 @@ public final class FirebaseProvider: Provider {
         services.register { container -> FirebaseClient in
             let httpClient = try container.make(Client.self)
             let config = try container.make(FirebaseConfig.self)
-            return FirebaseClient(authKey: config.authKey, client: httpClient, basePath: config.basePath)
+            return FirebaseClient(client: httpClient, basePath: config.basePath, email: config.email, privateKey: config.privateKey)
 
         }
     }
@@ -41,8 +63,8 @@ public final class FirebaseProvider: Provider {
 public struct FirebaseClient: Service {
     public var firebaseRoutes: FirebaseRoutes
 
-    internal init(authKey: String, client: Client, basePath: String) {
-        let apiRequest = FirebaseAPIRequest(httpClient: client, authKey: authKey, basePath: basePath)
+    internal init(client: Client, basePath: String, email: String, privateKey: String) {
+        let apiRequest = FirebaseAPIRequest(httpClient: client, basePath: basePath, email: email, privateKey: privateKey)
 
         firebaseRoutes = FirebaseRoutes(request: apiRequest)
 

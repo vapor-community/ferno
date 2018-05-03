@@ -7,6 +7,11 @@
 
 import Vapor
 
+
+public struct FirebaseChild: Content {
+    public var name: String
+}
+
 //Firebase Path Enum
 public enum FirebasePath {
     case child(String)
@@ -22,7 +27,7 @@ extension Array where Element == FirebasePath {
             case .child(let string):
                 path.append("/\(string)")
             case .json:
-                path.append(".json")
+                path.append("/.json")
             }
         }
         return path
@@ -112,7 +117,7 @@ extension Array where Element == FirebaseQueryParams {
 
             return "\(key)=\(value)"
             }.joined(separator: "&")
-        return queryString + "&auth=\(authKey)"
+        return queryString + "&access_token=\(authKey)"
     }
 }
 
@@ -120,8 +125,52 @@ extension Array where Element == FirebaseQueryParams {
 public struct FirebaseRoutes {
     private let request: FirebaseRequest
 
+
     init(request: FirebaseRequest) {
         self.request = request
+    }
+
+    //DELETE -> deletes everything
+    public func delete(req: Request, appendedPath: [FirebasePath]) throws -> Future<Bool> {
+        let sendReq: Future<Bool> = try self.request.delete(req: req, method: .DELETE, path: appendedPath)
+        return sendReq
+    }
+
+    //POST -> create child
+    public func create<T: Content>(req: Request, appendedPath: [FirebasePath], body: T) throws -> Future<FirebaseChild> {
+        let sendReq: Future<FirebaseChild> = try self.request.send(
+            req: req,
+            method: .POST,
+            path: appendedPath,
+            query: [],
+            body: body,
+            headers: [:])
+        return sendReq
+    }
+
+
+    //PUT will overwrite everything at that location with the data
+    public func overwrite<T: Content>(req: Request, appendedPath: [FirebasePath], body: T) throws -> Future<T> {
+        let sendReq: Future<T> = try self.request.send(
+            req: req,
+            method: .PUT,
+            path: appendedPath,
+            query: [],
+            body: body,
+            headers: [:])
+        return sendReq
+    }
+
+    //PATCH update location, but omitted values won't get replaced
+    public func update<T: Content>(req: Request, appendedPath: [FirebasePath], body: T) throws -> Future<T> {
+        let sendReq: Future<T> = try self.request.send(
+            req: req,
+            method: .PATCH,
+            path: appendedPath,
+            query: [],
+            body: body,
+            headers: [:])
+        return sendReq
     }
 
     public func retrieveMany<F: Decodable>(req: Request, queryItems: [FirebaseQueryParams]? = nil, appendedPath: [FirebasePath]) throws -> Future<[F]> {
