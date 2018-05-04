@@ -1,9 +1,6 @@
 # Ferno 🔥
 
-Ferno allows you to easily connect your vapor project with your Firebase realtime database. It is built with the brand new Vapor 3. It gives you a nice and clean interface to interact with the Firebase Realtime REST API. It will automatically turn the response into your class/struct! 
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+Ferno allows you to easily connect your Vapor project with your Firebase realtime database. It is built with the brand new Vapor 3. It gives you a nice and clean interface to interact with the Firebase Realtime REST API. It will automatically turn the response into your class/struct! 
 
 ### Prerequisites
 You will need:
@@ -24,7 +21,7 @@ dependencies: ["Vapor", ..., "Ferno"]
 
 ## Setup
 
-1. Ferno uses an access token to read and write to your database. First we will need to get a your service account information.
+1. Ferno uses an access token to read and write to your database. First we will need to get your service account information.
 
     * Log into the Firebase console
     * Click the settings gear next to `Project Overview`
@@ -69,37 +66,147 @@ And thats it! You usually should always append `.json` to the end of your `[Fern
 In GET requests, you might want to query on your data. This is what `[FernoQuery]` is for.
 
 `FernoQuery` is an enum with:
-    1. `case shallow(Bool)`
-    2. `case orderBy(FirebaseValue)`
-    3. `case limitToFirst(FirebaseValue)`
-    4. `case limitToLast(FirebaseValue)`
-    5. `case startAt(FirebaseValue)`
-    6. `case endAt(FirebaseValue)`
-    7. `case equalTo(FirebaseValue)`
+   1. `case shallow(Bool)`
+   2. `case orderBy(FernoValue)`
+   3. `case limitToFirst(FernoValue)`
+   4. `case limitToLast(FernoValue)`
+   5. `case startAt(FernoValue)`
+   6. `case endAt(FernoValue)`
+   7. `case equalTo(FernoValue)`
+   
 These are all the possible queries that are allowed on Firebase according to the [docs](https://firebase.google.com/docs/reference/rest/database/#section-query-parameters)
 
+#### NOTES on [FernoQuery]
+-  `shallow(Bool)` cannot be mixed with any other query parameters.
+- you usually use `orderBy(FernoValue)` in conjunction with enums `3-7`
+- using `orderBy(FernoValue)` alone will just order the data returned
+
+#### FernoValue
+You will notice most cases in `FernoQuery` have a value of `FernoValue`.
+`FernoValue` is just another enum with:
+   1. `case number(Int)`
+   2. `case string(String)`
+   3. `case boolean(Bool)`
+
+This is just a wrapper for types Firebase supports.
+
+#### Examples of [FernoQuery]
+Just using shallow: 
+```swift
+[.shallow(true)]
+```
+Filter data to only return data that matches `"age": 21`:
+```swift
+[.orderBy(.string("age")), .equalTo(.number(21))]
+```
+
+Just orderBy(returns data in ascending order):
+```swift
+[.orderBy(.string("age"))]
+```
+   
 ## Usage
 There are 6 functions that allow you to interact with your Firebase realtime database.
 
 ### GET
 There are two functions that allow you get your data.
    ```swift
-   client.ferno.retrieve(...)
+   client.ferno.retrieve(req: Request, queryItems: [FernoQuery], appendedPath: [FernoPath])
    ```
    ```swift
-   client.ferno.retrieveMany(...)
+   client.ferno.retrieveMany(req: Request, queryItems: [FernoQuery], appendedPath: [FernoPath])
    ```
+The only difference between `retrieve` and `retrieveMany` is the return type.
+- `retrive` returns -> `F` where `F` is of type `Decodable`
+- `retrieveMany` returns -> `[String: F]` where `F` is of type `Decodable` and `String` is the key
+
+#### Example
+   1. Define the value you want the data converted. 
+   ```swift
+   struct Developer: Content {
+      var name: String
+      var favLanguage: String
+      var age: Int
+   }
+   ```
+   2. Make the request. Make sure you set the type of the response so Ferno knows what to convert.
+   ```swift
+   let developers: Future<[String: Developer]> = try client.ferno.retrieveMany(req: request, queryItems: [], appendedPath: [.child("developers"), .json])
+   
+   let developer: Future<Developer> = try client.ferno.retrieve(req: request, queryItems: [], appendedPath: [.child("developers"), .child("dev1"), .json])
+   ```
+   
+### POST
+Used to create a new entry in your database
+```swift
+ client.ferno.create(req: Request, appendedPath: [FirebasePath], body: T) -> Future<FernoChild>
+```
+- `body: T` is of type `Content`.
+- `FernoChild` is a struct:
+   ```swift
+   struct FernoChild: Content {
+   var name: String
+   ```
+- `FernoChild` is returned, because the API request returns the key from the newly created child.
+
+#### Example
+```swift
+let newDeveloper = Developer(name: "Elon", favLanguage: "Python", age: 46) //conforms to Content
+let newDeveloperKey: Future<FernoChild> = try client.ferno.create(req: request, appendedPath: [.child("developers"), .json], body: newDeveloper)
+```
+
+### DELETE
+Used to delete an entry in your database
+```swift
+ client.ferno.delete(req: Request, appendedPath: [FirebasePath]) -> Future<Bool>
+```
+- the delete method will return a boolean depending on if the delete was successful
+
+#### Example
+```swift
+let successfulDelete: Future<Bol> = try client.ferno.delete(req: request, appendedPath: [.child("developers"), .child("dev-1"), .json])
+```
+
+### PATCH
+update values at a specific location, but omitted values won't get removed
+```swift
+ client.ferno.update(req: Request, appendedPath: [FernoPath], body: T -> Future<T>
+```
+- the update method will return the body
+
+### Example
+```swift
+struct UpdateDeveloperName: Content {
+var name: String
+}
+let newDeveloperName = UpdateDeveloperName(name: "Kimbal") //conforms to Content
+let updatedDeveloperName: Future<UpdateDeveloperName> = try client.ferno.update(req: request, appendedPath: [.child("developers"), .child(newDeveloperKey.name), .json], body: newDeveloper) //newDeveloperKey.name comes from the create method
+```
+
+### PUT
+overwrite the current location with data you are passing in
+```swift
+ client.ferno.overwrite(req: Request, appendedPath: [FernoPath], body: T -> Future<T>
+```
+
+#### Example
+```swift
+struct LeadDeveloper: Content {
+var name: String
+var company: String
+var age: Int
+}
+let leadDeveloper = LeadDeveloper(name: "Ashley", company: "Bio-Fit", age: 20)
+let leadDevResponse = try client.ferno.overwrite(req: request, appendedPath: [.child("developers"), .child(newDeveloperKey.name)], .json, body: leadDeveloper)
+```
+
 ## Testing
 
-Some of the tests written use an actual dummy Firebase realtime database. If you want to run all of the tests, you will need to create a dummy Firebase realtime database. The rest of the tests use a fake client to mimic responses by Firebase.
+Currently, tests were written using an actual dummy Firebase realtime database. If you want to run all of the tests, you will need to create a dummy Firebase realtime database.
 
 ### Testing Setup
 
-#TODO Explain how to set up tests to run
-
-```
-Give an example
-```
+You need to go to `Application+Testing.swift` and fill in the missing values based on your Firebase service account. Then you will be able to run tests.
 
 ## Authors
 
