@@ -10,4 +10,5 @@ import Foundation
 public enum FernoError: Error {
     case invalidURL
     case requestFailed
+    case invalidAccessToken
 }

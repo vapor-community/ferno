@@ -69,7 +69,6 @@ extension FernoAPIRequest {
             let completePath = self.basePath + path.childPath
             let queryString = query.createQuery(authKey: accessToken)
             let urlString = "\(completePath)?\(queryString)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-            print(urlString)
             let request = Request(using: self.httpClient.container)
             try request.content.encode(body)
             request.http.method = method
@@ -94,7 +93,8 @@ extension FernoAPIRequest {
 
     private func getAccessToken() throws -> Future<String> {
         if let expireDate = self.expireDate,  Calendar.current.compare(expireDate, to: Date(timeIntervalSinceNow: -120), toGranularity: .second) == .orderedDescending {
-            return Future.map(on: self.httpClient.container) { self.accessToken ?? "" }
+            guard let accessToken = self.accessToken else { throw FernoError.invalidAccessToken }
+            return Future.map(on: self.httpClient.container) { accessToken }
         }
         //we need to refresh the token
         let jwt = try createJWT()
@@ -105,11 +105,11 @@ extension FernoAPIRequest {
         try req.content.encode(oauthBody, as: .urlEncodedForm)
         req.http.url = URL(string: "https://www.googleapis.com/oauth2/v4/token")!
         req.http.method = .POST
-        print(req.debugDescription)
         return try self.httpClient.respond(to: req).flatMap(to: OAuthResponse.self) { result in
             let oauthRes: Future<OAuthResponse> = try result.content.decode(OAuthResponse.self)
             return oauthRes
             }.map(to: String.self) { resp in
+                self.accessToken = resp.access_token
                 return resp.access_token
         }
     }

@@ -61,12 +61,12 @@ public final class FernoProvider: Provider {
 }
 
 public struct FernoClient: Service {
-    public var firebaseRoutes: FernoRoutes
+    public var ferno: FernoRoutes
 
     internal init(client: Client, basePath: String, email: String, privateKey: String) {
         let apiRequest = FernoAPIRequest(httpClient: client, basePath: basePath, email: email, privateKey: privateKey)
 
-        firebaseRoutes = FernoRoutes(request: apiRequest)
+        ferno = FernoRoutes(request: apiRequest)
 
     }
 }
