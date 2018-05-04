@@ -28,7 +28,7 @@ public struct AccessToken {
     var jwt: JWT<Payload>
 }
 
-public struct FirebaseConfig: Service {
+public struct FernoConfig: Service {
     public let basePath: String
     public let email: String
     public let privateKey: String
@@ -40,15 +40,15 @@ public struct FirebaseConfig: Service {
     }
 }
 
-public final class FirebaseProvider: Provider {
+public final class FernoProvider: Provider {
 
     public init() { }
 
     public func register(_ services: inout Services) throws {
-        services.register { container -> FirebaseClient in
+        services.register { container -> FernoClient in
             let httpClient = try container.make(Client.self)
-            let config = try container.make(FirebaseConfig.self)
-            return FirebaseClient(client: httpClient, basePath: config.basePath, email: config.email, privateKey: config.privateKey)
+            let config = try container.make(FernoConfig.self)
+            return FernoClient(client: httpClient, basePath: config.basePath, email: config.email, privateKey: config.privateKey)
 
         }
     }
@@ -60,13 +60,13 @@ public final class FirebaseProvider: Provider {
 
 }
 
-public struct FirebaseClient: Service {
-    public var firebaseRoutes: FirebaseRoutes
+public struct FernoClient: Service {
+    public var firebaseRoutes: FernoRoutes
 
     internal init(client: Client, basePath: String, email: String, privateKey: String) {
-        let apiRequest = FirebaseAPIRequest(httpClient: client, basePath: basePath, email: email, privateKey: privateKey)
+        let apiRequest = FernoAPIRequest(httpClient: client, basePath: basePath, email: email, privateKey: privateKey)
 
-        firebaseRoutes = FirebaseRoutes(request: apiRequest)
+        firebaseRoutes = FernoRoutes(request: apiRequest)
 
     }
 }

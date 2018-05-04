@@ -7,7 +7,7 @@
 
 import Foundation
 import Vapor
-import FirebaseRealtime
+import Ferno
 import XCTest
 
 struct Teacher: Content {
@@ -45,15 +45,27 @@ final class FirebaseTests: XCTestCase {
     //GET students
     func testGetStudents() throws {
         do {
+            let client = try self.app.make(FernoClient.self)
+            let request = Request(using: self.app)
+
+            //Create 3 new students
+            let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
+            let ashley = Student(name: "Ashley", major: "Biology", school: "Siena & Cornell University", age: 20, willGraduate: true)
+            let billy = Student(name: "Billy", major: "Business", school: "Mira Costa Community", age: 22, willGraduate: false)
+
+            let _ = try client.firebaseRoutes.create(req: request, appendedPath: [.child("Students"), .json], body: austin).wait()
+           let _ = try client.firebaseRoutes.create(req: request, appendedPath: [.child("Students"), .json], body: ashley).wait()
+           let _ = try client.firebaseRoutes.create(req: request, appendedPath: [.child("Students"), .json], body: billy).wait()
+
+
             let names = ["Austin", "Ashley", "Billy"]
             let ages = ["Austin": 21, "Ashley": 20, "Billy": 22]
             let majors = ["Austin": "Computer Science", "Ashley": "Biology", "Billy": "Business"]
             let schools = ["Austin": "Cornell University", "Ashley": "Siena & Cornell University", "Billy": "Mira Costa Community"]
             let willGradaute = ["Austin": true, "Ashley": true, "Billy": false]
 
-            let client = try self.app.make(FirebaseClient.self)
-            let request = Request(using: self.app)
-            let students: [Student] = try client.firebaseRoutes.retrieveMany(req: request, appendedPath: [.json]).wait()
+
+            let students: [Student] = try client.firebaseRoutes.retrieveMany(req: request, queryItems: [], appendedPath: [.child("Students"), .json]).wait().map { $0.value }
 
             XCTAssertNotNil(students)
 
@@ -74,7 +86,7 @@ final class FirebaseTests: XCTestCase {
     func testCreateStudent() throws {
         do {
             let student = Student(name: "Matt", major: "Computer Science", school: "Cornell University", age: 20, willGraduate: true)
-            let client = try self.app.make(FirebaseClient.self)
+            let client = try self.app.make(FernoClient.self)
             let request = Request(using: self.app)
             let child = try client.firebaseRoutes.create(req: request, appendedPath: [.json], body: student).wait()
             XCTAssertNotNil(child.name)
@@ -87,7 +99,7 @@ final class FirebaseTests: XCTestCase {
     //DELETE student
     func testDeleteStudent() throws {
         do {
-            let client = try self.app.make(FirebaseClient.self)
+            let client = try self.app.make(FernoClient.self)
             let request = Request(using: self.app)
             let success = try client.firebaseRoutes.delete(req: request, appendedPath: [.child("User1"), .json]).wait()
             XCTAssertTrue(success, "did delete child")
@@ -100,7 +112,7 @@ final class FirebaseTests: XCTestCase {
     //PATCH update student
     func testUpdateStudent() throws {
         do {
-            let client = try self.app.make(FirebaseClient.self)
+            let client = try self.app.make(FernoClient.self)
             let request = Request(using: self.app)
             let updateStudentInfo = UpdateStudentInfo(major: "Cooking")
             let response = try client.firebaseRoutes.update(req: request, appendedPath: [.child("User2"), .json], body: updateStudentInfo).wait()
@@ -115,7 +127,7 @@ final class FirebaseTests: XCTestCase {
     func testOverwriteStudent() throws {
         do {
             let teacher = Teacher(name: "Ms. Jennifer", teachesGrade: "12th", age: 29)
-            let client = try self.app.make(FirebaseClient.self)
+            let client = try self.app.make(FernoClient.self)
             let request = Request(using: self.app)
             let response: Teacher = try client.firebaseRoutes.overwrite(req: request, appendedPath: [.child("User3"), .json], body: teacher).wait()
             XCTAssertTrue(response.name == teacher.name)

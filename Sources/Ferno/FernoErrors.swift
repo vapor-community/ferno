@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FirebaseRealtimeError: Error {
+public enum FernoError: Error {
     case invalidURL
     case requestFailed
 }

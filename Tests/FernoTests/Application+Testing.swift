@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import FirebaseRealtime
+import Ferno
 import Vapor
 
 class CreateApp {
@@ -18,9 +18,9 @@ class CreateApp {
         let config = Config.default()
         let env = try! Environment.detect()
         var services = Services.default()
-        let firebaseConfig = FirebaseConfig(basePath: "https://fir-realtime-f7953.firebaseio.com", email: "firebase-adminsdk-vwhg9@fir-realtime-f7953.iam.gserviceaccount.com", privateKey: privateKey)
+        let firebaseConfig = FernoConfig(basePath: "https://fir-realtime-f7953.firebaseio.com", email: "firebase-adminsdk-vwhg9@fir-realtime-f7953.iam.gserviceaccount.com", privateKey: privateKey)
         services.register(firebaseConfig)
-        try! services.register(FirebaseProvider())
+        try! services.register(FernoProvider())
 
 
         return try! Application(config: config, environment: env, services: services)

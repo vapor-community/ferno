@@ -122,11 +122,11 @@ extension Array where Element == FirebaseQueryParams {
 }
 
 
-public struct FirebaseRoutes {
-    private let request: FirebaseRequest
+public struct FernoRoutes {
+    private let request: FernoRequest
 
 
-    init(request: FirebaseRequest) {
+    init(request: FernoRequest) {
         self.request = request
     }
 
@@ -173,23 +173,23 @@ public struct FirebaseRoutes {
         return sendReq
     }
 
-    public func retrieveMany<F: Decodable>(req: Request, queryItems: [FirebaseQueryParams]? = nil, appendedPath: [FirebasePath]) throws -> Future<[F]> {
-        let sendReq: Future<[F]> = try self.request.sendMany(
+    public func retrieveMany<F: Decodable>(req: Request, queryItems: [FirebaseQueryParams], appendedPath: [FirebasePath]) throws -> Future<[String: F]> {
+        let sendReq: Future<[String: F]> = try self.request.sendMany(
             req: req,
             method: .GET,
             path: appendedPath,
-            query: queryItems ?? [],
+            query: queryItems,
             body: "",
             headers: [:])
         return sendReq
     }
 
-    public func retrieve<F: Decodable>(req: Request, queryItems: [FirebaseQueryParams]? = nil, appendedPath: [FirebasePath]) throws -> Future<F> {
+    public func retrieve<F: Decodable>(req: Request, queryItems: [FirebaseQueryParams], appendedPath: [FirebasePath]) throws -> Future<F> {
         let sendReq: Future<F> = try self.request.send(
             req: req,
             method: .GET,
             path: appendedPath,
-            query: queryItems ?? [],
+            query: queryItems,
             body: "",
             headers: [:])
         return sendReq

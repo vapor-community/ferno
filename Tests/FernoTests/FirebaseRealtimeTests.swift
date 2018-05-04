@@ -1,5 +1,5 @@
 import XCTest
-@testable import FirebaseRealtime
+@testable import Ferno
 @testable import Vapor
 
 struct Class: Content {

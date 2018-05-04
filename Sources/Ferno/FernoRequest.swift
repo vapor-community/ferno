@@ -12,13 +12,13 @@ struct OAuthResponse: Content {
     var expires_in: Int
 }
 
-public protocol FirebaseRequest {
+public protocol FernoRequest {
     func delete(req: Request, method: HTTPMethod, path: [FirebasePath]) throws -> Future<Bool>
     func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<F>
-    func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<[F]>
+    func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<[String: F]>
 }
 
-public class FirebaseAPIRequest: FirebaseRequest {
+public class FernoAPIRequest: FernoRequest {
     private let decoder = JSONDecoder()
     private let httpClient: Client
     private let basePath: String
@@ -47,25 +47,23 @@ public class FirebaseAPIRequest: FirebaseRequest {
     public func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<F> {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
             return try self.httpClient.respond(to: request).flatMap(to: F.self) { response in
-                guard response.http.status == .ok else { throw FirebaseRealtimeError.requestFailed }
+                guard response.http.status == .ok else { throw FernoError.requestFailed }
                 return try self.decoder.decode(F.self, from: response.http, maxSize: 65_536, on: req)
             }
         })
     }
 
-    public func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<[F]> {
+    public func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<[String: F]> {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
-            return try self.httpClient.respond(to: request).flatMap(to: [F].self) { response in
-                guard response.http.status == .ok else { throw FirebaseRealtimeError.requestFailed }
-                return try self.decoder.decode([String: F].self, from: response.http, maxSize: 65_536, on: req).map(to: [F].self) { data in
-                    return Array(data.values)
-                }
+            return try self.httpClient.respond(to: request).flatMap(to: [String: F].self) { response in
+                guard response.http.status == .ok else { throw FernoError.requestFailed }
+                return try self.decoder.decode([String: F].self, from: response.http, maxSize: 65_536, on: req)
             }
         })
     }
 }
 
-extension FirebaseAPIRequest {
+extension FernoAPIRequest {
     private func createRequest<T: Content>(method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders)throws -> Future<Request> {
         return try getAccessToken().map({ (accessToken) in
             let completePath = self.basePath + path.childPath
