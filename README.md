@@ -197,7 +197,7 @@ var company: String
 var age: Int
 }
 let leadDeveloper = LeadDeveloper(name: "Ashley", company: "Bio-Fit", age: 20)
-let leadDevResponse = try client.ferno.overwrite(req: request, appendedPath: [.child("developers"), .child(newDeveloperKey.name)], .json, body: leadDeveloper)
+let leadDevResponse: Future<LeadDeveloper> = try client.ferno.overwrite(req: request, appendedPath: [.child("developers"), .child(newDeveloperKey.name)], .json, body: leadDeveloper)
 ```
 
 ## Testing
