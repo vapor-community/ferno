@@ -50,14 +50,14 @@ final class FirebaseTests: XCTestCase {
 
             //Create 3 new students
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell University", age: 21, willGraduate: true)
-             let child = try client.ferno.create(req: request, appendedPath: [.child("Student-get"), .json], body: austin).wait()
+             let child = try client.ferno.create(req: request, appendedPath: ["Student-get"], body: austin).wait()
 
-            let student: Student = try client.ferno.retrieve(req: request, queryItems: [], appendedPath: [.child("Student-get"), .child(child.name), .json]).wait()
+            let student: Student = try client.ferno.retrieve(req: request, queryItems: [], appendedPath: ["Student-get", child.name]).wait()
 
             XCTAssert(student.name == "Austin")
             XCTAssert(student.major == "Computer Science")
 
-            let success = try client.ferno.delete(req: request, appendedPath: [.child("Student-get"), .child(child.name), .json]).wait()
+            let success = try client.ferno.delete(req: request, appendedPath: ["Student-get", child.name]).wait()
 
             XCTAssertTrue(success)
 
@@ -77,9 +77,9 @@ final class FirebaseTests: XCTestCase {
             let ashley = Student(name: "Ashley", major: "Biology", school: "Siena & Cornell University", age: 20, willGraduate: true)
             let billy = Student(name: "Billy", major: "Business", school: "Mira Costa Community", age: 22, willGraduate: false)
 
-            let _ = try client.ferno.create(req: request, appendedPath: [.child("Students-get"), .json], body: austin).wait()
-           let _ = try client.ferno.create(req: request, appendedPath: [.child("Students-get"), .json], body: ashley).wait()
-           let _ = try client.ferno.create(req: request, appendedPath: [.child("Students-get"), .json], body: billy).wait()
+            let _ = try client.ferno.create(req: request, appendedPath: ["Students-get"], body: austin).wait()
+           let _ = try client.ferno.create(req: request, appendedPath: ["Students-get"], body: ashley).wait()
+           let _ = try client.ferno.create(req: request, appendedPath: ["Students-get"], body: billy).wait()
 
 
             let names = ["Austin", "Ashley", "Billy"]
@@ -89,7 +89,7 @@ final class FirebaseTests: XCTestCase {
             let willGradaute = ["Austin": true, "Ashley": true, "Billy": false]
 
 
-            let students: [Student] = try client.ferno.retrieveMany(req: request, queryItems: [], appendedPath: [.child("Students-get"), .json]).wait().map { $0.value }
+            let students: [Student] = try client.ferno.retrieveMany(req: request, queryItems: [], appendedPath: ["Students-get"]).wait().map { $0.value }
 
             XCTAssertNotNil(students)
 
@@ -102,7 +102,7 @@ final class FirebaseTests: XCTestCase {
                 XCTAssert(willGradaute[student.name] == student.willGraduate, "Checking willGraduate for \(student.name)")
             }
 
-            let success = try client.ferno.delete(req: request, appendedPath: [.child("Students-get"), .json]).wait()
+            let success = try client.ferno.delete(req: request, appendedPath: ["Students-get"]).wait()
 
             XCTAssertTrue(success)
 
@@ -117,10 +117,10 @@ final class FirebaseTests: XCTestCase {
             let student = Student(name: "Matt", major: "Computer Science", school: "Cornell University", age: 20, willGraduate: true)
             let client = try self.app.make(FernoClient.self)
             let request = Request(using: self.app)
-            let child = try client.ferno.create(req: request, appendedPath: [.json], body: student).wait()
+            let child = try client.ferno.create(req: request, appendedPath: [], body: student).wait()
             XCTAssertNotNil(child.name)
 
-            let success = try client.ferno.delete(req: request, appendedPath: [.child(child.name), .json]).wait()
+            let success = try client.ferno.delete(req: request, appendedPath: [child.name]).wait()
 
             XCTAssertTrue(success)
         } catch {
@@ -136,10 +136,10 @@ final class FirebaseTests: XCTestCase {
             let request = Request(using: self.app)
             let timothy = Student(name: "Timothy", major: "Agriculture", school: "Mira Costa Community", age: 24, willGraduate: false)
 
-            let child = try client.ferno.create(req: request, appendedPath: [.child("Students-delete"), .json], body: timothy).wait()
+            let child = try client.ferno.create(req: request, appendedPath: ["Students-delete"], body: timothy).wait()
 
 
-            let success = try client.ferno.delete(req: request, appendedPath: [.child("Students-delete"), .child(child.name), .json]).wait()
+            let success = try client.ferno.delete(req: request, appendedPath: ["Students-delete", child.name]).wait()
             XCTAssertTrue(success, "did delete child")
         } catch {
             print(error)
@@ -153,14 +153,14 @@ final class FirebaseTests: XCTestCase {
             let client = try self.app.make(FernoClient.self)
             let request = Request(using: self.app)
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
-            let child = try client.ferno.create(req: request, appendedPath: [.child("Students-patch"), .json], body: austin).wait()
+            let child = try client.ferno.create(req: request, appendedPath: ["Students-patch"], body: austin).wait()
 
 
             let updateStudentInfo = UpdateStudentInfo(major: "Cooking")
-            let response = try client.ferno.update(req: request, appendedPath: [.child("Students-patch"), .child(child.name), .json], body: updateStudentInfo).wait()
+            let response = try client.ferno.update(req: request, appendedPath: ["Students-patch", child.name], body: updateStudentInfo).wait()
             XCTAssertTrue(response.major == updateStudentInfo.major)
 
-            let success = try client.ferno.delete(req: request, appendedPath: [.child("Students-patch"), .child(child.name), .json]).wait()
+            let success = try client.ferno.delete(req: request, appendedPath: ["Students-patch", child.name]).wait()
 
             XCTAssertTrue(success)
             
@@ -175,15 +175,15 @@ final class FirebaseTests: XCTestCase {
             let client = try self.app.make(FernoClient.self)
             let request = Request(using: self.app)
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
-            let child = try client.ferno.create(req: request, appendedPath: [.child("Students-put"), .json], body: austin).wait()
+            let child = try client.ferno.create(req: request, appendedPath: ["Students-put"], body: austin).wait()
 
 
 
             let teacher = Teacher(name: "Ms. Jennifer", teachesGrade: "12th", age: 29)
-            let response: Teacher = try client.ferno.overwrite(req: request, appendedPath: [.child("Students-put"), .child(child.name), .json], body: teacher).wait()
+            let response: Teacher = try client.ferno.overwrite(req: request, appendedPath: ["Students-put", child.name], body: teacher).wait()
             XCTAssertTrue(response.name == teacher.name)
 
-            let success = try client.ferno.delete(req: request, appendedPath: [.child("Students-put"), .child(child.name), .json]).wait()
+            let success = try client.ferno.delete(req: request, appendedPath: ["Students-put", child.name]).wait()
             XCTAssertTrue(success)
 
 

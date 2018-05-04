@@ -1,6 +1,7 @@
 import Vapor
 import JWT
 
+
 struct OAuthBody: Content {
     var grant_type: String
     var assertion: String
@@ -13,9 +14,9 @@ struct OAuthResponse: Content {
 }
 
 public protocol FernoRequest {
-    func delete(req: Request, method: HTTPMethod, path: [FirebasePath]) throws -> Future<Bool>
-    func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<F>
-    func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<[String: F]>
+    func delete(req: Request, method: HTTPMethod, path: [String]) throws -> Future<Bool>
+    func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders) throws -> Future<F>
+    func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders) throws -> Future<[String: F]>
 }
 
 public class FernoAPIRequest: FernoRequest {
@@ -36,7 +37,7 @@ public class FernoAPIRequest: FernoRequest {
         self.accessToken = nil
     }
 
-    public func delete(req: Request, method: HTTPMethod, path: [FirebasePath]) throws -> Future<Bool> {
+    public func delete(req: Request, method: HTTPMethod, path: [String]) throws -> Future<Bool> {
         return try self.createRequest(method: method, path: path, query: [], body: "", headers: [:]).flatMap({ request in
             return try self.httpClient.respond(to: request).map({ response in
                 return response.http.status == .ok
@@ -44,7 +45,7 @@ public class FernoAPIRequest: FernoRequest {
         })
     }
 
-    public func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<F> {
+    public func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders) throws -> Future<F> {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
             return try self.httpClient.respond(to: request).flatMap(to: F.self) { response in
                 guard response.http.status == .ok else { throw FernoError.requestFailed }
@@ -53,7 +54,7 @@ public class FernoAPIRequest: FernoRequest {
         })
     }
 
-    public func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders) throws -> Future<[String: F]> {
+    public func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders) throws -> Future<[String: F]> {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
             return try self.httpClient.respond(to: request).flatMap(to: [String: F].self) { response in
                 guard response.http.status == .ok else { throw FernoError.requestFailed }
@@ -64,9 +65,10 @@ public class FernoAPIRequest: FernoRequest {
 }
 
 extension FernoAPIRequest {
-    private func createRequest<T: Content>(method: HTTPMethod, path: [FirebasePath], query: [FirebaseQueryParams], body: T, headers: HTTPHeaders)throws -> Future<Request> {
+    private func createRequest<T: Content>(method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders)throws -> Future<Request> {
         return try getAccessToken().map({ (accessToken) in
-            let completePath = self.basePath + path.childPath
+            let fernoPath: [FernoPath] = path.makeFernoPath()
+            let completePath = self.basePath + fernoPath.childPath
             let queryString = query.createQuery(authKey: accessToken)
             let urlString = "\(completePath)?\(queryString)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
             let request = Request(using: self.httpClient.container)
