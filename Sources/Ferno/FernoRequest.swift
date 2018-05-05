@@ -58,7 +58,9 @@ public class FernoAPIRequest: FernoRequest {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
             return try self.httpClient.respond(to: request).flatMap(to: [String: F].self) { response in
                 guard response.http.status == .ok else { throw FernoError.requestFailed }
-                return try self.decoder.decode([String: F].self, from: response.http, maxSize: 65_536, on: req)
+                return try self.decoder.decode(Snapshot<F>.self, from: response.http, maxSize: 65_536, on: req).map { snapshot in
+                    return snapshot.data
+                }
             }
         })
     }
