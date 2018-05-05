@@ -124,10 +124,10 @@ Used to create a new entry in your database
 - `FernoChild` is returned, because the API request returns the key from the newly created child.
 
 #### Example
-```swift
-let newDeveloper = Developer(name: "Elon", favLanguage: "Python", age: 46) //conforms to Content
-let newDeveloperKey: Future<FernoChild> = try client.ferno.create(req: request, appendedPath: ["developers"], body: newDeveloper)
-```
+   ```swift
+   let newDeveloper = Developer(name: "Elon", favLanguage: "Python", age: 46) //conforms to Content
+   let newDeveloperKey: Future<FernoChild> = try client.ferno.create(req: request, appendedPath: ["developers"], body: newDeveloper)
+   ```
 
 ### DELETE
 Used to delete an entry in your database
@@ -137,9 +137,9 @@ Used to delete an entry in your database
 - the delete method will return a boolean depending on if the delete was successful
 
 #### Example
-```swift
-let successfulDelete: Future<Bool> = try client.ferno.delete(req: request, appendedPath: ["developers", "dev-1"])
-```
+   ```swift
+   let successfulDelete: Future<Bool> = try client.ferno.delete(req: request, appendedPath: ["developers", "dev-1"])
+   ```
 
 ### PATCH
 update values at a specific location, but omitted values won't get removed
@@ -149,13 +149,13 @@ update values at a specific location, but omitted values won't get removed
 - the update method will return the body
 
 ### Example
-```swift
-struct UpdateDeveloperName: Content {
-var name: String
-}
-let newDeveloperName = UpdateDeveloperName(name: "Kimbal") //conforms to Content
-let updatedDeveloperName: Future<UpdateDeveloperName> = try client.ferno.update(req: request, appendedPath: ["developers", newDeveloperKey.name], body: newDeveloper) //newDeveloperKey.name comes from the create method
-```
+   ```swift
+   struct UpdateDeveloperName: Content {
+   var name: String
+   }
+   let newDeveloperName = UpdateDeveloperName(name: "Kimbal") //conforms to Content
+   let updatedDeveloperName: Future<UpdateDeveloperName> = try client.ferno.update(req: request, appendedPath: ["developers", newDeveloperKey.name], body: newDeveloper) //newDeveloperKey.name comes from the create method
+   ```
 
 ### PUT
 overwrite the current location with data you are passing in
@@ -164,15 +164,15 @@ overwrite the current location with data you are passing in
 ```
 
 #### Example
-```swift
-struct LeadDeveloper: Content {
-var name: String
-var company: String
-var age: Int
-}
-let leadDeveloper = LeadDeveloper(name: "Ashley", company: "Bio-Fit", age: 20)
-let leadDevResponse: Future<LeadDeveloper> = try client.ferno.overwrite(req: request, appendedPath: ["developers", newDeveloperKey.name], body: leadDeveloper)
-```
+   ```swift
+   struct LeadDeveloper: Content {
+   var name: String
+   var company: String
+   var age: Int
+   }
+   let leadDeveloper = LeadDeveloper(name: "Ashley", company: "Bio-Fit", age: 20)
+   let leadDevResponse: Future<LeadDeveloper> = try client.ferno.overwrite(req: request, appendedPath: ["developers", newDeveloperKey.name], body: leadDeveloper)
+   ```
 
 ## Testing
 
