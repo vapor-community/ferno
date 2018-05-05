@@ -41,27 +41,6 @@ try services.register(FernoProvider())
 ## Parameters
 There are some custom parameters to pass into functions. I want to go over all the parameters you will need to know.
 
-### [FernoPath]
-In all requests you make, you will see the parameter `appendedPath` with the type `[FernoPath]`.
-This paramter allows you to specify where in your Firebase database to execute the request. 
-
-`FernoPath` is an enum with two possible values:
-   1. `case child(String)`
-   2. `case json`
-
-#### Example
-Here is an example database that I will be using.
-
-<img src="https://github.com/AAAstorga/firebase-provider/blob/master/screenshots/firebase-db-example.png" alt="alt Firebase DB" width="300">
-
-How would we convert the path `developers->dev-1` to `[FernoPath]`? 
-
-Easy:
-```swift
-[.child("developers"), .child("dev-1"), .json]
-```
-And thats it! You usually should always append `.json` to the end of your `[FernoPath]`.
-
 ### [FernoQuery]
 In GET requests, you might want to query on your data. This is what `[FernoQuery]` is for.
 
@@ -83,12 +62,7 @@ These are all the possible queries that are allowed on Firebase according to the
 
 #### FernoValue
 You will notice most cases in `FernoQuery` have a value of `FernoValue`.
-`FernoValue` is just another enum with:
-   1. `case number(Int)`
-   2. `case string(String)`
-   3. `case boolean(Bool)`
-
-This is just a wrapper for types Firebase supports.
+`FernoValue` is just a wrapper for `Bool, String, Int, Double, Float`. So you can just do `.startAt(5)` and everything will work.
 
 #### Examples of [FernoQuery]
 Just using shallow: 
@@ -97,12 +71,12 @@ Just using shallow:
 ```
 Filter data to only return data that matches `"age": 21`:
 ```swift
-[.orderBy(.string("age")), .equalTo(.number(21))]
+[.orderBy("age"), .equalTo(21)]
 ```
 
 Just orderBy(returns data in ascending order):
 ```swift
-[.orderBy(.string("age"))]
+[.orderBy("age")]
 ```
    
 ## Usage
@@ -111,10 +85,10 @@ There are 6 functions that allow you to interact with your Firebase realtime dat
 ### GET
 There are two functions that allow you get your data.
    ```swift
-   client.ferno.retrieve(req: Request, queryItems: [FernoQuery], appendedPath: [FernoPath])
+   client.ferno.retrieve(req: Request, queryItems: [FernoQuery], appendedPath: [String])
    ```
    ```swift
-   client.ferno.retrieveMany(req: Request, queryItems: [FernoQuery], appendedPath: [FernoPath])
+   client.ferno.retrieveMany(req: Request, queryItems: [FernoQuery], appendedPath: [String])
    ```
 The only difference between `retrieve` and `retrieveMany` is the return type.
 - `retrive` returns -> `F` where `F` is of type `Decodable`
@@ -131,15 +105,15 @@ The only difference between `retrieve` and `retrieveMany` is the return type.
    ```
    2. Make the request. Make sure you set the type of the response so Ferno knows what to convert.
    ```swift
-   let developers: Future<[String: Developer]> = try client.ferno.retrieveMany(req: request, queryItems: [], appendedPath: [.child("developers"), .json])
+   let developers: Future<[String: Developer]> = try client.ferno.retrieveMany(req: request, queryItems: [], appendedPath: ["developers"])
    
-   let developer: Future<Developer> = try client.ferno.retrieve(req: request, queryItems: [], appendedPath: [.child("developers"), .child("dev1"), .json])
+   let developer: Future<Developer> = try client.ferno.retrieve(req: request, queryItems: [], appendedPath: ["developers", "dev1"])
    ```
    
 ### POST
 Used to create a new entry in your database
 ```swift
- client.ferno.create(req: Request, appendedPath: [FirebasePath], body: T) -> Future<FernoChild>
+ client.ferno.create(req: Request, appendedPath: [String], body: T) -> Future<FernoChild>
 ```
 - `body: T` is of type `Content`.
 - `FernoChild` is a struct:
@@ -152,25 +126,25 @@ Used to create a new entry in your database
 #### Example
 ```swift
 let newDeveloper = Developer(name: "Elon", favLanguage: "Python", age: 46) //conforms to Content
-let newDeveloperKey: Future<FernoChild> = try client.ferno.create(req: request, appendedPath: [.child("developers"), .json], body: newDeveloper)
+let newDeveloperKey: Future<FernoChild> = try client.ferno.create(req: request, appendedPath: ["developers"], body: newDeveloper)
 ```
 
 ### DELETE
 Used to delete an entry in your database
 ```swift
- client.ferno.delete(req: Request, appendedPath: [FirebasePath]) -> Future<Bool>
+ client.ferno.delete(req: Request, appendedPath: [String]) -> Future<Bool>
 ```
 - the delete method will return a boolean depending on if the delete was successful
 
 #### Example
 ```swift
-let successfulDelete: Future<Bol> = try client.ferno.delete(req: request, appendedPath: [.child("developers"), .child("dev-1"), .json])
+let successfulDelete: Future<Bool> = try client.ferno.delete(req: request, appendedPath: ["developers", "dev-1"])
 ```
 
 ### PATCH
 update values at a specific location, but omitted values won't get removed
 ```swift
- client.ferno.update(req: Request, appendedPath: [FernoPath], body: T -> Future<T>
+ client.ferno.update(req: Request, appendedPath: [String], body: T -> Future<T>
 ```
 - the update method will return the body
 
@@ -180,13 +154,13 @@ struct UpdateDeveloperName: Content {
 var name: String
 }
 let newDeveloperName = UpdateDeveloperName(name: "Kimbal") //conforms to Content
-let updatedDeveloperName: Future<UpdateDeveloperName> = try client.ferno.update(req: request, appendedPath: [.child("developers"), .child(newDeveloperKey.name), .json], body: newDeveloper) //newDeveloperKey.name comes from the create method
+let updatedDeveloperName: Future<UpdateDeveloperName> = try client.ferno.update(req: request, appendedPath: ["developers", newDeveloperKey.name], body: newDeveloper) //newDeveloperKey.name comes from the create method
 ```
 
 ### PUT
 overwrite the current location with data you are passing in
 ```swift
- client.ferno.overwrite(req: Request, appendedPath: [FernoPath], body: T -> Future<T>
+ client.ferno.overwrite(req: Request, appendedPath: [String], body: T -> Future<T>
 ```
 
 #### Example
@@ -197,7 +171,7 @@ var company: String
 var age: Int
 }
 let leadDeveloper = LeadDeveloper(name: "Ashley", company: "Bio-Fit", age: 20)
-let leadDevResponse: Future<LeadDeveloper> = try client.ferno.overwrite(req: request, appendedPath: [.child("developers"), .child(newDeveloperKey.name)], .json, body: leadDeveloper)
+let leadDevResponse: Future<LeadDeveloper> = try client.ferno.overwrite(req: request, appendedPath: ["developers", newDeveloperKey.name], body: leadDeveloper)
 ```
 
 ## Testing
