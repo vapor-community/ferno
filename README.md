@@ -11,7 +11,7 @@ You will need:
 In your Package.swift file, add the line
 
 ```swift
-.package(url: "https://github.com/AAAstorga/firebase-provider.git", from: "0.1.0")
+.package(url: "https://github.com/vapor-community/firebase-provider.git", from: "0.1.0")
 ```
 Also make sure you add `Ferno` as a dependency
 
