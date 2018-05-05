@@ -7,26 +7,7 @@
 
 import Foundation
 
-//Firebase Value Enum
-//public enum FernoValue {
-//
-//    case number(Int)
-//    case string(String)
-//    case boolean(Bool)
-//
-//    func stringForm() -> String {
-//        switch self {
-//        case .boolean(let bool):
-//            return bool.description
-//        case .number(let int):
-//            return int.description
-//        case .string(let str):
-//            return "\"\(str)\""
-//        }
-//    }
-//}
-
-//Firebase Query Params Enum
+//FernoQuery Enum
 
 public enum FernoQuery {
     case shallow(Bool)
@@ -71,7 +52,7 @@ extension FernoQuery: RawRepresentable {
 extension Array where Element == FernoQuery {
 
     func createQuery(authKey: String) -> String {
-        let queryString: String = self.map { param in
+        var queryParts: [(String, String)] = self.map { param in
             let key = param.rawValue
             let value: String = {
                 switch param {
@@ -91,9 +72,13 @@ extension Array where Element == FernoQuery {
                     return val.value
                 }
             }()
-
-            return "\(key)=\(value)"
+            return (key, value)
+        }
+        queryParts.append(("access_token", authKey))
+        let queryString = queryParts.map { (key, value) -> String in
+            let encValue = value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+            return "\(key)=\(encValue)"
             }.joined(separator: "&")
-        return queryString + "&access_token=\(authKey)"
+        return "?" + queryString
     }
 }

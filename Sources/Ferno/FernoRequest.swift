@@ -70,7 +70,7 @@ extension FernoAPIRequest {
             let fernoPath: [FernoPath] = path.makeFernoPath()
             let completePath = self.basePath + fernoPath.childPath
             let queryString = query.createQuery(authKey: accessToken)
-            let urlString = "\(completePath)?\(queryString)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            let urlString = completePath + queryString
             let request = Request(using: self.httpClient.container)
             try request.content.encode(body)
             request.http.method = method
