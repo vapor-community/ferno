@@ -17,11 +17,15 @@ struct Snapshot<T: Decodable>: Decodable {
                 return
             }
         var unkeyedContainer = try decoder.unkeyedContainer()
-        let decodedArrayData = try unkeyedContainer.decode([T].self)
-        var dict: [String: T] = [:]
-        decodedArrayData.enumerated().forEach { index, element in
-            dict[index.description] = element
+        let decodedArrayData = try unkeyedContainer.decode([T?].self)
+        let pairs = decodedArrayData.enumerated().compactMap { index, element -> (String, T)? in
+            guard let element = element else {
+                return nil
+            }
+
+            return (index.description, element)
         }
-        data = dict
+
+        data = Dictionary(uniqueKeysWithValues: pairs)
     }
 }
