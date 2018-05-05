@@ -8,7 +8,7 @@
 import Vapor
 
 
-public struct FirebaseChild: Content {
+public struct FernoChild: Content {
     public var name: String
 }
 
@@ -27,8 +27,8 @@ public struct FernoRoutes {
     }
 
     //POST -> create child
-    public func create<T: Content>(req: Request, appendedPath: [String], body: T) throws -> Future<FirebaseChild> {
-        let sendReq: Future<FirebaseChild> = try self.request.send(
+    public func create<T: Content>(req: Request, appendedPath: [String], body: T) throws -> Future<FernoChild> {
+        let sendReq: Future<FernoChild> = try self.request.send(
             req: req,
             method: .POST,
             path: appendedPath,
