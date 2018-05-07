@@ -1,4 +1,4 @@
-# Ferno 🔥
+# ![Ferno 🔥](https://github.com/vapor-community/firebase-provider/blob/master/screenshots/FERNO.png)
 
 Ferno allows you to easily connect your Vapor project with your Firebase realtime database. It is built with the brand new Vapor 3. It gives you a nice and clean interface to interact with the Firebase Realtime REST API. It will automatically turn the response into your class/struct! 
 
@@ -30,9 +30,11 @@ dependencies: ["Vapor", ..., "Ferno"]
     * Click the button at the bottom that says `GENERATE NEW PRIVATE KEY`
     * This will download a `.json` file. You will now have access to the email and private key. You will pass those into the initialize during the next step.
 
-2. Register `Ferno` as a Provider. This is usually done in `configure.swift`
+2. Register `Ferno` as a Provider and import `Ferno`. This is usually done in `configure.swift`
 
 ```swift
+import Ferno
+
 let fernoConfig = FernoConfig(basePath: "database-url", email: "service-account-email", privateKey: "private-key")
 services.register(fernoConfig)
 try services.register(FernoProvider())
