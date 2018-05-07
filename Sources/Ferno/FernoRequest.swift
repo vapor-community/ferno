@@ -39,7 +39,7 @@ public class FernoAPIRequest: FernoRequest {
 
     public func delete(req: Request, method: HTTPMethod, path: [String]) throws -> Future<Bool> {
         return try self.createRequest(method: method, path: path, query: [], body: "", headers: [:]).flatMap({ request in
-            return try self.httpClient.respond(to: request).map({ response in
+            return self.httpClient.send(request).map({ response in
                 return response.http.status == .ok
             })
         })
@@ -47,7 +47,7 @@ public class FernoAPIRequest: FernoRequest {
 
     public func send<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders) throws -> Future<F> {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
-            return try self.httpClient.respond(to: request).flatMap(to: F.self) { response in
+            return self.httpClient.send(request).flatMap(to: F.self) { response in
                 guard response.http.status == .ok else { throw FernoError.requestFailed }
                 return try self.decoder.decode(F.self, from: response.http, maxSize: 65_536, on: req)
             }
@@ -56,7 +56,7 @@ public class FernoAPIRequest: FernoRequest {
 
     public func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders) throws -> Future<[String: F]> {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
-            return try self.httpClient.respond(to: request).flatMap(to: [String: F].self) { response in
+            return self.httpClient.send(request).flatMap(to: [String: F].self) { response in
                 guard response.http.status == .ok else { throw FernoError.requestFailed }
                 return try self.decoder.decode(Snapshot<F>.self, from: response.http, maxSize: 65_536, on: req).map { snapshot in
                     return snapshot.data
@@ -109,7 +109,7 @@ extension FernoAPIRequest {
         try req.content.encode(oauthBody, as: .urlEncodedForm)
         req.http.url = URL(string: "https://www.googleapis.com/oauth2/v4/token")!
         req.http.method = .POST
-        return try self.httpClient.respond(to: req).flatMap(to: OAuthResponse.self) { result in
+        return self.httpClient.send(req).flatMap(to: OAuthResponse.self) { result in
             let oauthRes: Future<OAuthResponse> = try result.content.decode(OAuthResponse.self)
             return oauthRes
             }.map(to: String.self) { resp in
