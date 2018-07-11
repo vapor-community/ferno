@@ -96,10 +96,10 @@ extension FernoAPIRequest {
     }
 
     private func getAccessToken() throws -> Future<String> {
-        if let expireDate = self.expireDate,  Calendar.current.compare(expireDate, to: Date(timeIntervalSinceNow: -120), toGranularity: .second) == .orderedDescending {
-            guard let accessToken = self.accessToken else { throw FernoError.invalidAccessToken }
-            return Future.map(on: self.httpClient.container) { accessToken }
-        }
+        //if let expireDate = self.expireDate,  Calendar.current.compare(expireDate, to: Date(timeIntervalSinceNow: -120), toGranularity: .second) == .orderedDescending {
+        //    guard let accessToken = self.accessToken else { throw FernoError.invalidAccessToken }
+        //    return Future.map(on: self.httpClient.container) { accessToken }
+        //}
         //we need to refresh the token
         let jwt = try createJWT()
         var headers = HTTPHeaders()
