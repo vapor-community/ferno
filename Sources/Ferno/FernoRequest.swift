@@ -103,13 +103,16 @@ extension FernoAPIRequest {
         //    return Future.map(on: self.httpClient.container) { accessToken }
         //}
         //we need to refresh the token
+        print("going to get accessToken")
         let jwt = try createJWT()
+        print("created jwt")
         var headers = HTTPHeaders()
         headers.add(name: .contentType, value: "application/x-www-form-urlencoded")
         let oauthBody = OAuthBody(grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: String.init(data: jwt, encoding: .utf8)!)
         let req = Request(using: self.httpClient.container)
         try req.content.encode(oauthBody, as: .urlEncodedForm)
         req.http.url = URL(string: "https://www.googleapis.com/oauth2/v4/token")!
+        print("created url")
         req.http.method = .POST
         return self.httpClient.send(req).flatMap(to: OAuthResponse.self) { result in
             let oauthRes: Future<OAuthResponse> = try result.content.decode(OAuthResponse.self)
