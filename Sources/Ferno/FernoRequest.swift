@@ -115,9 +115,7 @@ extension FernoAPIRequest {
         print("created url")
         req.http.method = .POST
         print("set method as POST")
-        let result = self.httpClient.send(req).flatMap(to: OAuthResponse.self).wait()
-        print("got result from waiting")
-        
+
         return self.httpClient.send(req).flatMap(to: OAuthResponse.self) { result in
             print("got oauthresponse")                                                              
             let oauthRes: Future<OAuthResponse> = try result.content.decode(OAuthResponse.self)
