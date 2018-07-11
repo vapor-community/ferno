@@ -114,7 +114,9 @@ extension FernoAPIRequest {
         req.http.url = URL(string: "https://www.googleapis.com/oauth2/v4/token")!
         print("created url")
         req.http.method = .POST
+        print("set method as POST")
         return self.httpClient.send(req).flatMap(to: OAuthResponse.self) { result in
+            print("got oauthresponse")                                                              
             let oauthRes: Future<OAuthResponse> = try result.content.decode(OAuthResponse.self)
             return oauthRes
             }.map(to: String.self) { resp in
