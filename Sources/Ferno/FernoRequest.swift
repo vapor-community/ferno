@@ -56,7 +56,9 @@ public class FernoAPIRequest: FernoRequest {
 
     public func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders) throws -> Future<[String: F]> {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
+            print("created request")                                                                                                           
             return self.httpClient.send(request).flatMap(to: [String: F].self) { response in
+                print("got a response")                                                                
                 guard response.http.status == .ok else { throw FernoError.requestFailed }
                 return try self.decoder.decode(Snapshot<F>.self, from: response.http, maxSize: 65_536, on: req).map { snapshot in
                     return snapshot.data
@@ -114,6 +116,7 @@ extension FernoAPIRequest {
             return oauthRes
             }.map(to: String.self) { resp in
                 self.accessToken = resp.access_token
+                print("Got access token \(resp.access_token)")
                 return resp.access_token
         }
     }
