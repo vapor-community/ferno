@@ -56,17 +56,18 @@ public class FernoAPIRequest: FernoRequest {
 
     public func sendMany<F: Decodable, T: Content>(req: Request, method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders) throws -> Future<[String: F]> {
         return try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap({ (request) in
-            print("created request")                                                                                                           
             return self.httpClient.send(request).flatMap(to: [String: F].self) { response in
-                print("got a response")                                                                
-                guard response.http.status == .ok else { throw FernoError.requestFailed }
-                return try self.decoder.decode(Snapshot<F>.self, from: response.http, maxSize: 65_536, on: req).map { snapshot in
-                    return snapshot.data
+                print("received response from sendMany")
+                guard response.http.status == .ok else {
+                    print(String.init(data: response.http.body.data!, encoding: .utf8))
+                    throw FernoError.requestFailed
+                }
+                return try response.content.decode(Snapshot<F>.self).map { snapshot in
+                     return snapshot.data
                 }
             }
         })
     }
-}
 
 extension FernoAPIRequest {
     private func createRequest<T: Content>(method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders)throws -> Future<Request> {
