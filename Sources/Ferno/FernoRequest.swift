@@ -68,6 +68,7 @@ public class FernoAPIRequest: FernoRequest {
             }
         })
     }
+}
 
 extension FernoAPIRequest {
     private func createRequest<T: Content>(method: HTTPMethod, path: [String], query: [FernoQuery], body: T, headers: HTTPHeaders)throws -> Future<Request> {
