@@ -1,23 +1,25 @@
 # ![Ferno 🔥](https://github.com/vapor-community/firebase-provider/blob/master/screenshots/FERNO.png)
 
-Ferno allows you to easily connect your Vapor project with your Firebase realtime database. It is built with the brand new Vapor 3. It gives you a nice and clean interface to interact with the Firebase Realtime REST API. It will automatically turn the response into your class/struct! 
+Ferno allows you to easily connect your Vapor project with your Firebase realtime database. It is built with the brand new Vapor 4. It gives you a nice and clean interface to interact with the Firebase Realtime REST API. It will automatically turn the response into your class/struct! 
 
 ### Prerequisites
 You will need:
-- Vapor 3.0+
+- Vapor 4.0+
 
 ### Installing
 
 In your Package.swift file, add the line
 
 ```swift
-.package(url: "https://github.com/vapor-community/ferno.git", from: "0.2.0")
+.package(url: "https://github.com/maximkrouk/ferno.git", .branch("master"))
 ```
 
 Also make sure you add `Ferno` as a dependency
 
 ```swift
-dependencies: ["Vapor", ..., "Ferno"]
+dependencies: [
+  .product(name: "Ferno", package: "ferno")
+]
 ```
 
 ## Setup
@@ -35,9 +37,12 @@ dependencies: ["Vapor", ..., "Ferno"]
 ```swift
 import Ferno
 
-let fernoConfig = FernoConfig(basePath: "database-url", email: "service-account-email", privateKey: "private-key")
-services.register(fernoConfig)
-try services.register(FernoProvider())
+let fernoConfiguration = FernoConfiguration(
+    basePath: "database-url", 
+    email: "service-account-email", 
+    privateKey: "private-key"
+)
+app.ferno.use(.default(fernoConfiguration))
 ```
 
 ## Parameters
@@ -54,7 +59,7 @@ In GET requests, you might want to query on your data. This is what `[FernoQuery
    5. `case startAt(FernoValue)`
    6. `case endAt(FernoValue)`
    7. `case equalTo(FernoValue)`
-   
+
 These are all the possible queries that are allowed on Firebase according to the [docs](https://firebase.google.com/docs/reference/rest/database/#section-query-parameters)
 
 #### NOTES on [FernoQuery]
@@ -80,17 +85,23 @@ Just orderBy(returns data in ascending order):
 ```swift
 [.orderBy("age")]
 ```
-   
+
 ## Usage
 There are 6 functions that allow you to interact with your Firebase realtime database.
 
 ### GET
-There are two functions that allow you get your data.
+There are four functions that allow you get your data.
 ```swift
-client.ferno.retrieve(req: Request, queryItems: [FernoQuery], appendedPath: [String])
+app.ferno.retrieve(_ path: [String], queryItems: [FernoQuery] = [], on req: Request)
 ```
 ```swift
-client.ferno.retrieveMany(req: Request, queryItems: [FernoQuery], appendedPath: [String])
+app.ferno.retrieve(_ path: String..., queryItems: [FernoQuery] = [], on req: Request)
+```
+```swift
+app.ferno.retrieveMany(_ path: [String], queryItems: [FernoQuery] = [], on req: Request)
+```
+```swift
+app.ferno.retrieveMany(_ path: String..., queryItems: [FernoQuery] = [], on req: Request)
 ```
 The only difference between `retrieve` and `retrieveMany` is the return type.
 - `retrieve` returns -> `F` where `F` is of type `Decodable`
@@ -108,16 +119,18 @@ struct Developer: Content {
 
 2. Make the request. Make sure you set the type of the response so Ferno knows what to convert.
 ```swift
-let developers: Future<[String: Developer]> = try client.ferno.retrieveMany(req: request, queryItems: [], appendedPath: ["developers"])
-let developer: Future<Developer> = try client.ferno.retrieve(req: request, queryItems: [], appendedPath: ["developers", "dev1"])
+let developers: EventLoopFuture<[String: Developer]> = try app.ferno.retrieveMany("developers", on: request)
+let developer: EventLoopFuture<Developer> = try app.ferno.retrieve(["developers", "dev1"], on req: req)
 ```
-   
+
 ### POST
 Used to create a new entry in your database
 ```swift
-client.ferno.create(req: Request, appendedPath: [String], body: T) -> Future<FernoChild>
+app.ferno.create(_ path: [String], body: T, on req: Request) -> EventLoopFuture<FernoChild>
 ```
-
+```swift
+app.ferno.create(_ path: String..., body: T, on req: Request) -> EventLoopFuture<FernoChild>
+```
 - `body: T` is of type `Content`.
 - `FernoChild` is a struct:
 
@@ -131,26 +144,32 @@ struct FernoChild: Content {
 
 #### Example
 ```swift
-let newDeveloper = Developer(name: "Elon", favLanguage: "Python", age: 46) //conforms to Content
-let newDeveloperKey: Future<FernoChild> = try client.ferno.create(req: request, appendedPath: ["developers"], body: newDeveloper)
+let newDeveloper = Developer(name: "Elon", favLanguage: "Python", age: 46) // conforms to Content
+let newDeveloperKey: Future<FernoChild> = try app.ferno.create("developers", body: newDeveloper, on: req)
 ```
 
 ### DELETE
 Used to delete an entry in your database
 ```swift
-client.ferno.delete(req: Request, appendedPath: [String]) -> Future<Bool>
+app.ferno.delete(_ path: [String], on req: Request) -> EventLoopFuture<Bool>
+```
+```swift
+app.ferno.delete(_ path: String..., on req: Request) -> EventLoopFuture<Bool>
 ```
 - the delete method will return a boolean depending on if the delete was successful
 
 #### Example
 ```swift
-let successfulDelete: Future<Bool> = try client.ferno.delete(req: request, appendedPath: ["developers", "dev-1"])
+let successfulDelete: EventLoopFuture<Bool> = try app.ferno.delete(["developers", "dev-1"], on: req)
 ```
 
 ### PATCH
-update values at a specific location, but omitted values won't get removed
+Update values at a specific location, but omitted values won't get removed
 ```swift
-client.ferno.update(req: Request, appendedPath: [String], body: T -> Future<T>
+app.ferno.update(_ path: [String], body: T, on req: Request) -> EventLoopFuture<T>
+```
+```swift
+app.ferno.update(_ path: String..., body: T, on req: Request) -> EventLoopFuture<T>
 ```
 - the update method will return the body
 
@@ -161,15 +180,17 @@ struct UpdateDeveloperName: Content {
 }
 
 let newDeveloperName = UpdateDeveloperName(name: "Kimbal") //conforms to Content
-let updatedDeveloperName: Future<UpdateDeveloperName> = try client.ferno.update(req: request, appendedPath: ["developers", newDeveloperKey.name], body: newDeveloper) //newDeveloperKey.name comes from the create method
+let updatedDeveloperName: EventLoopFuture<UpdateDeveloperName> = try app.ferno.update(["developers", newDeveloperKey.name], body: newDeveloper, on: req) //newDeveloperKey.name comes from the create method
 ```
 
 ### PUT
-overwrite the current location with data you are passing in
+Overwrite the current location with data you are passing in
 ```swift
-client.ferno.overwrite(req: Request, appendedPath: [String], body: T -> Future<T>
+client.ferno.overwrite(_ path: [String], body: T, on req: Request) -> EventLoopFuture<T>
 ```
-
+```swift
+client.ferno.overwrite(_ path: String..., body: T, on req: Request) -> EventLoopFuture<T>
+```
 #### Example
 ```swift
 struct LeadDeveloper: Content {
@@ -179,7 +200,7 @@ struct LeadDeveloper: Content {
 }
 
 let leadDeveloper = LeadDeveloper(name: "Ashley", company: "Bio-Fit", age: 20)
-let leadDevResponse: Future<LeadDeveloper> = try client.ferno.overwrite(req: request, appendedPath: ["developers", newDeveloperKey.name], body: leadDeveloper)
+let leadDevResponse: Future<LeadDeveloper> = try app.ferno.overwrite(["developers", newDeveloperKey.name], body: leadDeveloper, on: req)
 ```
 
 ## Testing
@@ -192,7 +213,8 @@ You need to go to `Application+Testing.swift` and fill in the missing values bas
 
 ## Authors
 
-* **Austin Astorga** - *Main developer* - [My Github](https://github.com/aaastorga)
+* **[Austin Astorga](https://github.com/aaastorga)** - *Main developer*
+* **[Maxim Krouk](https://github.com/maximkrouk)** - *Migration to Vapor4*
 
 ## License
 

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+
 // module internal
 struct Snapshot<T: Decodable>: Decodable {
     let data: [String: T]

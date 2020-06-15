@@ -5,23 +5,20 @@
 //  Created by Austin Astorga on 5/1/18.
 //
 
-import Foundation
 import Ferno
-import Vapor
+import XCTVapor
 
-class CreateApp {
-    static func makeApp() -> Application {
-        let privateKey = """
-        """
-
-        let config = Config.default()
-        let env = try! Environment.detect()
-        var services = Services.default()
-        let firebaseConfig = FernoConfig(basePath: "", email: "", privateKey: privateKey)
-        services.register(firebaseConfig)
-        try! services.register(FernoProvider())
-
-
-        return try! Application(config: config, environment: env, services: services)
-    }
+func launch(_ test: (Application) throws -> Void) throws {
+    let app = Application(.testing)
+    defer { app.shutdown() }
+    app.ferno.use(
+        .default(
+            FernoConfiguration(
+                basePath: "database-url",
+                email: "service-account-email",
+                privateKey: "private-key"
+            )
+        )
+    )
+    try test(app)
 }

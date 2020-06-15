@@ -5,10 +5,8 @@
 //  Created by Austin Astorga on 5/2/18.
 //
 
-import Foundation
-import Vapor
+import XCTVapor
 import Ferno
-import XCTest
 
 struct Teacher: Content {
     var name: String
@@ -29,57 +27,40 @@ struct Student: Content {
 }
 
 final class FirebaseTests: XCTestCase {
-    
-    var app: Application!
-
-    static let allTests = [
-        ("testGetStudents", testGetStudents),
-        ("testCreateStudent", testCreateStudent)
-    ]
-
-    override func setUp() {
-        super.setUp()
-        self.app = CreateApp.makeApp()
-    }
 
     //GET a student
     func testGetStudent() throws {
-        do {
-            let client = try self.app.make(FernoClient.self)
-            let request = Request(using: self.app)
-
+        try launch { app in
+            
+            let request = Request(application: app, on: app.eventLoopGroup.next())
             //Create 3 new students
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell University", age: 21, willGraduate: true)
-             let child = try client.ferno.create(req: request, appendedPath: ["Student-get"], body: austin).wait()
+            let child = try app.ferno.create(["Student-get"], body: austin, on: request).wait()
 
-            let student: Student = try client.ferno.retrieve(req: request, queryItems: [], appendedPath: ["Student-get", child.name]).wait()
+            let student: Student = try app.ferno.retrieve(["Student-get", child.name], queryItems: [], on: request).wait()
 
             XCTAssert(student.name == "Austin")
             XCTAssert(student.major == "Computer Science")
 
-            let success = try client.ferno.delete(req: request, appendedPath: ["Student-get", child.name]).wait()
+            let success = try app.ferno.delete(["Student-get", child.name], on: request).wait()
 
             XCTAssertTrue(success)
-
-        } catch {
-            XCTFail(error.localizedDescription)
         }
     }
 
     //GET students
     func testGetStudents() throws {
-        do {
-            let client = try self.app.make(FernoClient.self)
-            let request = Request(using: self.app)
+        try launch { app in
+            let request = Request(application: app, on: app.eventLoopGroup.next())
 
             //Create 3 new students
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell University", age: 21, willGraduate: true)
             let ashley = Student(name: "Ashley", major: "Biology", school: "Siena & Cornell University", age: 20, willGraduate: true)
             let billy = Student(name: "Billy", major: "Business", school: "Mira Costa Community", age: 22, willGraduate: false)
 
-            let _ = try client.ferno.create(req: request, appendedPath: ["Students-get"], body: austin).wait()
-           let _ = try client.ferno.create(req: request, appendedPath: ["Students-get"], body: ashley).wait()
-           let _ = try client.ferno.create(req: request, appendedPath: ["Students-get"], body: billy).wait()
+            let _ = try app.ferno.create(["Students-get"], body: austin, on: request).wait()
+            let _ = try app.ferno.create(["Students-get"], body: ashley, on: request).wait()
+            let _ = try app.ferno.create(["Students-get"], body: billy, on: request).wait()
 
 
             let names = ["Austin", "Ashley", "Billy"]
@@ -89,7 +70,7 @@ final class FirebaseTests: XCTestCase {
             let willGradaute = ["Austin": true, "Ashley": true, "Billy": false]
 
 
-            let students: [Student] = try client.ferno.retrieveMany(req: request, queryItems: [], appendedPath: ["Students-get"]).wait().map { $0.value }
+            let students: [Student] = try app.ferno.retrieveMany("Students-get", queryItems: [], on: request).wait().map { $0.value }
 
             XCTAssertNotNil(students)
 
@@ -102,93 +83,77 @@ final class FirebaseTests: XCTestCase {
                 XCTAssert(willGradaute[student.name] == student.willGraduate, "Checking willGraduate for \(student.name)")
             }
 
-            let success = try client.ferno.delete(req: request, appendedPath: ["Students-get"]).wait()
+            let success = try app.ferno.delete("Students-get", on: request).wait()
 
             XCTAssertTrue(success)
 
-        } catch {
-            print(error)
         }
     }
 
     //POST Student
     func testCreateStudent() throws {
-        do {
+        try launch { app in
+            let request = Request(application: app, on: app.eventLoopGroup.next())
             let student = Student(name: "Matt", major: "Computer Science", school: "Cornell University", age: 20, willGraduate: true)
-            let client = try self.app.make(FernoClient.self)
-            let request = Request(using: self.app)
-            let child = try client.ferno.create(req: request, appendedPath: [], body: student).wait()
+            let child = try app.ferno.create(body: student, on: request).wait()
             XCTAssertNotNil(child.name)
 
-            let success = try client.ferno.delete(req: request, appendedPath: [child.name]).wait()
+            let success = try app.ferno.delete(child.name, on: request).wait()
 
             XCTAssertTrue(success)
-        } catch {
-            print(error)
-            XCTFail()
         }
     }
 
     //DELETE student
     func testDeleteStudent() throws {
-        do {
-            let client = try self.app.make(FernoClient.self)
-            let request = Request(using: self.app)
+        try launch { app in
+            let request = Request(application: app, on: app.eventLoopGroup.next())
             let timothy = Student(name: "Timothy", major: "Agriculture", school: "Mira Costa Community", age: 24, willGraduate: false)
 
-            let child = try client.ferno.create(req: request, appendedPath: ["Students-delete"], body: timothy).wait()
+            let child = try app.ferno.create("Students-delete", body: timothy, on: request).wait()
 
 
-            let success = try client.ferno.delete(req: request, appendedPath: ["Students-delete", child.name]).wait()
+            let success = try app.ferno.delete(["Students-delete", child.name], on: request).wait()
             XCTAssertTrue(success, "did delete child")
-        } catch {
-            print(error)
-            XCTFail()
         }
     }
 
     //PATCH update student
     func testUpdateStudent() throws {
-        do {
-            let client = try self.app.make(FernoClient.self)
-            let request = Request(using: self.app)
+        try launch { app in
+            let request = Request(application: app, on: app.eventLoopGroup.next())
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
-            let child = try client.ferno.create(req: request, appendedPath: ["Students-patch"], body: austin).wait()
+            let child = try app.ferno.create(["Students-patch"], body: austin, on: request).wait()
 
 
             let updateStudentInfo = UpdateStudentInfo(major: "Cooking")
-            let response = try client.ferno.update(req: request, appendedPath: ["Students-patch", child.name], body: updateStudentInfo).wait()
+            let response = try app.ferno.update(["Students-patch", child.name], body: updateStudentInfo, on: request).wait()
             XCTAssertTrue(response.major == updateStudentInfo.major)
 
-            let success = try client.ferno.delete(req: request, appendedPath: ["Students-patch", child.name]).wait()
+            let success = try app.ferno.delete(["Students-patch", child.name], on: request).wait()
 
             XCTAssertTrue(success)
             
-        } catch {
-            XCTFail(error.localizedDescription)
         }
     }
 
     //PUT overwrite student
     func testOverwriteStudent() throws {
-        do {
-            let client = try self.app.make(FernoClient.self)
-            let request = Request(using: self.app)
+        try launch { app in
+            let request = Request(application: app, on: app.eventLoopGroup.next())
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
-            let child = try client.ferno.create(req: request, appendedPath: ["Students-put"], body: austin).wait()
+            let child = try app.ferno.create(["Students-put"], body: austin, on: request).wait()
 
 
 
             let teacher = Teacher(name: "Ms. Jennifer", teachesGrade: "12th", age: 29)
-            let response: Teacher = try client.ferno.overwrite(req: request, appendedPath: ["Students-put", child.name], body: teacher).wait()
+            let response: Teacher = try app.ferno.overwrite(["Students-put", child.name], body: teacher, on: request).wait()
             XCTAssertTrue(response.name == teacher.name)
 
-            let success = try client.ferno.delete(req: request, appendedPath: ["Students-put", child.name]).wait()
+            let success = try app.ferno.delete(["Students-put", child.name], on: request).wait()
             XCTAssertTrue(success)
 
 
-        } catch {
-            XCTFail(error.localizedDescription)
         }
     }
 }
