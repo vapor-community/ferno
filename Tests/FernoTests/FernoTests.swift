@@ -29,38 +29,36 @@ struct Student: Content {
 final class FirebaseTests: XCTestCase {
 
     //GET a student
-    func testGetStudent() throws {
-        try launch { app in
+    func testGetStudent() async throws {
+        try await launch { app in
             
-            let request = Request(application: app, on: app.eventLoopGroup.next())
             //Create 3 new students
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell University", age: 21, willGraduate: true)
-            let child = try app.ferno.create(["Student-get"], body: austin, on: request).wait()
+            let child = try await app.ferno.create(["Student-get"], body: austin)
 
-            let student: Student = try app.ferno.retrieve(["Student-get", child.name], queryItems: [], on: request).wait()
+            let student: Student = try await app.ferno.retrieve(["Student-get", child.name], queryItems: [])
 
             XCTAssert(student.name == "Austin")
             XCTAssert(student.major == "Computer Science")
 
-            let success = try app.ferno.delete(["Student-get", child.name], on: request).wait()
+            let success = try await app.ferno.delete(["Student-get", child.name])
 
             XCTAssertTrue(success)
         }
     }
 
     //GET students
-    func testGetStudents() throws {
-        try launch { app in
-            let request = Request(application: app, on: app.eventLoopGroup.next())
+    func testGetStudents() async throws {
+        try await launch { app in
 
             //Create 3 new students
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell University", age: 21, willGraduate: true)
             let ashley = Student(name: "Ashley", major: "Biology", school: "Siena & Cornell University", age: 20, willGraduate: true)
             let billy = Student(name: "Billy", major: "Business", school: "Mira Costa Community", age: 22, willGraduate: false)
 
-            let _ = try app.ferno.create(["Students-get"], body: austin, on: request).wait()
-            let _ = try app.ferno.create(["Students-get"], body: ashley, on: request).wait()
-            let _ = try app.ferno.create(["Students-get"], body: billy, on: request).wait()
+            let _ = try await app.ferno.create(["Students-get"], body: austin)
+            let _ = try await app.ferno.create(["Students-get"], body: ashley)
+            let _ = try await app.ferno.create(["Students-get"], body: billy)
 
 
             let names = ["Austin", "Ashley", "Billy"]
@@ -70,7 +68,7 @@ final class FirebaseTests: XCTestCase {
             let willGradaute = ["Austin": true, "Ashley": true, "Billy": false]
 
 
-            let students: [Student] = try app.ferno.retrieveMany("Students-get", queryItems: [], on: request).wait().map { $0.value }
+            let students: [Student] = try await app.ferno.retrieveMany("Students-get", queryItems: []).map { $0.value }
 
             XCTAssertNotNil(students)
 
@@ -83,7 +81,7 @@ final class FirebaseTests: XCTestCase {
                 XCTAssert(willGradaute[student.name] == student.willGraduate, "Checking willGraduate for \(student.name)")
             }
 
-            let success = try app.ferno.delete("Students-get", on: request).wait()
+            let success = try await app.ferno.delete("Students-get")
 
             XCTAssertTrue(success)
 
@@ -91,69 +89,58 @@ final class FirebaseTests: XCTestCase {
     }
 
     //POST Student
-    func testCreateStudent() throws {
-        try launch { app in
-            let request = Request(application: app, on: app.eventLoopGroup.next())
+    func testCreateStudent() async throws {
+        try await launch { app in
             let student = Student(name: "Matt", major: "Computer Science", school: "Cornell University", age: 20, willGraduate: true)
-            let child = try app.ferno.create(body: student, on: request).wait()
+            let child = try await app.ferno.create(body: student)
             XCTAssertNotNil(child.name)
 
-            let success = try app.ferno.delete(child.name, on: request).wait()
+            let success = try await app.ferno.delete(child.name)
 
             XCTAssertTrue(success)
         }
     }
 
     //DELETE student
-    func testDeleteStudent() throws {
-        try launch { app in
-            let request = Request(application: app, on: app.eventLoopGroup.next())
+    func testDeleteStudent() async throws {
+        try await launch { app in
             let timothy = Student(name: "Timothy", major: "Agriculture", school: "Mira Costa Community", age: 24, willGraduate: false)
 
-            let child = try app.ferno.create("Students-delete", body: timothy, on: request).wait()
+            let child = try await app.ferno.create("Students-delete", body: timothy)
 
-
-            let success = try app.ferno.delete(["Students-delete", child.name], on: request).wait()
+            let success = try await app.ferno.delete(["Students-delete", child.name])
             XCTAssertTrue(success, "did delete child")
         }
     }
 
     //PATCH update student
-    func testUpdateStudent() throws {
-        try launch { app in
-            let request = Request(application: app, on: app.eventLoopGroup.next())
+    func testUpdateStudent() async throws {
+        try await launch { app in
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
-            let child = try app.ferno.create(["Students-patch"], body: austin, on: request).wait()
-
+            let child = try await app.ferno.create(["Students-patch"], body: austin)
 
             let updateStudentInfo = UpdateStudentInfo(major: "Cooking")
-            let response = try app.ferno.update(["Students-patch", child.name], body: updateStudentInfo, on: request).wait()
+            let response = try await app.ferno.update(["Students-patch", child.name], body: updateStudentInfo)
             XCTAssertTrue(response.major == updateStudentInfo.major)
 
-            let success = try app.ferno.delete(["Students-patch", child.name], on: request).wait()
+            let success = try await app.ferno.delete(["Students-patch", child.name])
 
             XCTAssertTrue(success)
-            
         }
     }
 
     //PUT overwrite student
-    func testOverwriteStudent() throws {
-        try launch { app in
-            let request = Request(application: app, on: app.eventLoopGroup.next())
+    func testOverwriteStudent() async throws {
+        try await launch { app in
             let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
-            let child = try app.ferno.create(["Students-put"], body: austin, on: request).wait()
-
-
+            let child = try await app.ferno.create(["Students-put"], body: austin)
 
             let teacher = Teacher(name: "Ms. Jennifer", teachesGrade: "12th", age: 29)
-            let response: Teacher = try app.ferno.overwrite(["Students-put", child.name], body: teacher, on: request).wait()
+            let response: Teacher = try await app.ferno.overwrite(["Students-put", child.name], body: teacher)
             XCTAssertTrue(response.name == teacher.name)
 
-            let success = try app.ferno.delete(["Students-put", child.name], on: request).wait()
+            let success = try await app.ferno.delete(["Students-put", child.name])
             XCTAssertTrue(success)
-
-
         }
     }
 }

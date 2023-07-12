@@ -8,7 +8,7 @@
 import Ferno
 import XCTVapor
 
-func launch(_ test: (Application) throws -> Void) throws {
+func launch(_ test: (Application) async throws -> Void) async throws {
     let app = Application(.testing)
     defer { app.shutdown() }
     app.ferno.use(
@@ -20,5 +20,5 @@ func launch(_ test: (Application) throws -> Void) throws {
             )
         )
     )
-    try test(app)
+    try await test(app)
 }

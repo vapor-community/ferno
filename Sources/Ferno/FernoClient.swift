@@ -14,13 +14,11 @@ struct OAuthResponse: Content {
 
 public protocol FernoClient {
     func delete(
-        on req: Request,
         method: HTTPMethod,
         path: [String]
     ) throws -> EventLoopFuture<Bool>
     
     func send<F: Decodable, T: Content>(
-        on req: Request,
         method: HTTPMethod,
         path: [String],
         query: [FernoQuery],
@@ -29,7 +27,6 @@ public protocol FernoClient {
     ) throws -> EventLoopFuture<F>
     
     func sendMany<F: Decodable, T: Content>(
-        on req: Request,
         method: HTTPMethod,
         path: [String],
         query: [FernoQuery],
@@ -49,7 +46,6 @@ final class FernoAPIClient: FernoClient {
     }
 
     public func delete(
-        on req: Request,
         method: HTTPMethod,
         path: [String]
     ) throws -> EventLoopFuture<Bool> {
@@ -59,7 +55,6 @@ final class FernoAPIClient: FernoClient {
     }
 
     public func send<F: Decodable, T: Content>(
-        on req: Request,
         method: HTTPMethod,
         path: [String],
         query: [FernoQuery],
@@ -75,7 +70,6 @@ final class FernoAPIClient: FernoClient {
     }
 
     public func sendMany<F: Decodable, T: Content>(
-        on req: Request,
         method: HTTPMethod,
         path: [String],
         query: [FernoQuery],

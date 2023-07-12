@@ -99,31 +99,31 @@ extension Application {
 extension Application.Ferno {
     
     /// Deletes everything
-    public func delete(_ path: String..., on req: Request) throws -> EventLoopFuture<Bool> {
-        try self.delete(path, on: req)
+    public func delete(_ path: String...) async throws -> Bool {
+        try await self.delete(path)
     }
 
     /// Creates child
-    public func create<T: Content>(_ path: String..., body: T, on req: Request) throws -> EventLoopFuture<FernoChild> {
-        try self.create(path, body: body, on: req)
+    public func create<T: Content>(_ path: String..., body: T) async throws -> FernoChild {
+        try await self.create(path, body: body)
     }
 
     /// Overwrites everything at that location with the data
-    public func overwrite<T: Content>(_ path: String..., body: T, on req: Request) throws -> EventLoopFuture<T> {
-        try self.overwrite(path, body: body, on: req)
+    public func overwrite<T: Content>(_ path: String..., body: T) async throws -> T {
+        try await self.overwrite(path, body: body)
     }
 
     /// Updates location, but omitted values won't get replaced
-    public func update<T: Content>(_ path: String..., body: T, on req: Request) throws -> EventLoopFuture<T> {
-        try self.update(path, body: body, on: req)
+    public func update<T: Content>(_ path: String..., body: T) async throws -> T {
+        try await self.update(path, body: body)
     }
 
-    public func retrieveMany<F: Decodable>(_ path: String..., queryItems: [FernoQuery] = [], on req: Request) throws -> EventLoopFuture<[String: F]> {
-        try self.retrieveMany(path, queryItems: queryItems, on: req)
+    public func retrieveMany<F: Decodable>(_ path: String..., queryItems: [FernoQuery] = []) async throws -> [String: F] {
+        try await self.retrieveMany(path, queryItems: queryItems)
     }
 
-    public func retrieve<F: Decodable>(_ path: String..., queryItems: [FernoQuery] = [], on req: Request) throws -> EventLoopFuture<F> {
-        try self.retrieve(path, queryItems: queryItems, on: req)
+    public func retrieve<F: Decodable>(_ path: String..., queryItems: [FernoQuery] = []) async throws -> F {
+        try await self.retrieve(path, queryItems: queryItems)
     }
 }
 
@@ -131,66 +131,61 @@ extension Application.Ferno {
 extension Application.Ferno {
     
     /// Deletes everything
-    public func delete(_ path: [String], on req: Request) throws -> EventLoopFuture<Bool> {
-        try self.client.delete(on: req, method: .DELETE, path: path)
+    public func delete(_ path: [String]) async throws -> Bool {
+        try await self.client.delete(method: .DELETE, path: path).get()
     }
 
     /// Creates child
-    public func create<T: Content>(_ path: [String], body: T, on req: Request) throws -> EventLoopFuture<FernoChild> {
-        try self.client.send(
-            on: req,
+    public func create<T: Content>(_ path: [String], body: T) async throws -> FernoChild {
+        try await self.client.send(
             method: .POST,
             path: path,
             query: [],
             body: body,
             headers: [:]
-        )
+        ).get()
     }
 
 
     /// Overwrites everything at that location with the data
-    public func overwrite<T: Content>(_ path: [String], body: T, on req: Request) throws -> EventLoopFuture<T> {
-        try self.client.send(
-            on: req,
+    public func overwrite<T: Content>(_ path: [String], body: T) async throws -> T {
+        try await self.client.send(
             method: .PUT,
             path: path,
             query: [],
             body: body,
             headers: [:]
-        )
+        ).get()
     }
 
     /// Updates location, but omitted values won't get replaced
-    public func update<T: Content>(_ path: [String], body: T, on req: Request) throws -> EventLoopFuture<T> {
-        try self.client.send(
-            on: req,
+    public func update<T: Content>(_ path: [String], body: T) async throws -> T {
+        try await self.client.send(
             method: .PATCH,
             path: path,
             query: [],
             body: body,
             headers: [:]
-        )
+        ).get()
     }
 
-    public func retrieveMany<F: Decodable>(_ path: [String], queryItems: [FernoQuery] = [], on req: Request) throws -> EventLoopFuture<[String: F]> {
-        try self.client.sendMany(
-            on: req,
+    public func retrieveMany<F: Decodable>(_ path: [String], queryItems: [FernoQuery] = []) async throws -> [String: F] {
+        try await self.client.sendMany(
             method: .GET,
             path: path,
             query: queryItems,
             body: "",
             headers: [:]
-        )
+        ).get()
     }
 
-    public func retrieve<F: Decodable>(_ path: [String], queryItems: [FernoQuery] = [], on req: Request) throws -> EventLoopFuture<F> {
-        try self.client.send(
-            on: req,
+    public func retrieve<F: Decodable>(_ path: [String], queryItems: [FernoQuery] = []) async throws -> F {
+        try await self.client.send(
             method: .GET,
             path: path,
             query: queryItems,
             body: "",
             headers: [:]
-        )
+        ).get()
     }
 }
