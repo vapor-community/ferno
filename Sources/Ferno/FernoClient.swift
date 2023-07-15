@@ -1,5 +1,6 @@
 import Vapor
 import JWT
+import NIOConcurrencyHelpers
 
 struct OAuthBody: Content {
     var grant_type: String
@@ -16,7 +17,7 @@ public protocol FernoClient {
     func delete(
         method: HTTPMethod,
         path: [String]
-    ) throws -> EventLoopFuture<Bool>
+    ) async throws -> Bool
     
     func send<F: Decodable, T: Content>(
         method: HTTPMethod,
@@ -24,7 +25,7 @@ public protocol FernoClient {
         query: [FernoQuery],
         body: T,
         headers: HTTPHeaders
-    ) throws -> EventLoopFuture<F>
+    ) async throws -> F
     
     func sendMany<F: Decodable, T: Content>(
         method: HTTPMethod,
@@ -32,13 +33,14 @@ public protocol FernoClient {
         query: [FernoQuery],
         body: T,
         headers: HTTPHeaders
-    ) throws -> EventLoopFuture<[String: F]>
+    ) async throws -> [String: F]
 }
 
 final class FernoAPIClient: FernoClient {
     private let decoder = JSONDecoder()
     private let client: Client
     private(set) public var configuration: FernoConfiguration
+    private let lock = NIOLock()
 
     public init(configuration: FernoConfiguration, client: Client) {
         self.configuration = configuration
@@ -48,10 +50,10 @@ final class FernoAPIClient: FernoClient {
     public func delete(
         method: HTTPMethod,
         path: [String]
-    ) throws -> EventLoopFuture<Bool> {
-        try self.createRequest(method: method, path: path, query: [], body: "", headers: [:]).flatMap { req in
-            self.client.send(req).map { $0.status == .ok }
-        }
+    ) async throws -> Bool {
+        let req = try await self.createRequest(method: method, path: path, query: [], body: "", headers: [:])
+        let response = try await client.send(req)
+        return response.status == .ok
     }
 
     public func send<F: Decodable, T: Content>(
@@ -60,13 +62,11 @@ final class FernoAPIClient: FernoClient {
         query: [FernoQuery],
         body: T,
         headers: HTTPHeaders
-    ) throws -> EventLoopFuture<F> {
-        try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap { req in
-            self.client.send(req).flatMapThrowing { res in
-                guard res.status == .ok else { throw FernoError.requestFailed }
-                return try res.content.decode(F.self)
-            }
-        }
+    ) async throws -> F {
+        let req = try await self.createRequest(method: method, path: path, query: query, body: body, headers: headers)
+        let res = try await client.send(req)
+        guard res.status == .ok else { throw FernoError.requestFailed }
+        return try res.content.decode(F.self)
     }
 
     public func sendMany<F: Decodable, T: Content>(
@@ -75,13 +75,11 @@ final class FernoAPIClient: FernoClient {
         query: [FernoQuery],
         body: T,
         headers: HTTPHeaders
-    ) throws -> EventLoopFuture<[String: F]> {
-        try self.createRequest(method: method, path: path, query: query, body: body, headers: headers).flatMap { req in
-            self.client.send(req).flatMapThrowing { res in
-                guard res.status == .ok else { throw FernoError.requestFailed }
-                return try res.content.decode(Snapshot<F>.self).data
-            }
-        }
+    ) async throws -> [String: F] {
+        let req = try await self.createRequest(method: method, path: path, query: query, body: body, headers: headers)
+        let res = try await self.client.send(req)
+        guard res.status == .ok else { throw FernoError.requestFailed }
+        return try res.content.decode(Snapshot<F>.self).data
     }
 }
 
@@ -92,16 +90,15 @@ extension FernoAPIClient {
         query: [FernoQuery],
         body: T,
         headers: HTTPHeaders
-    ) throws -> EventLoopFuture<ClientRequest> {
-        try getAccessToken().flatMapThrowing { accessToken in
-            let fernoPath: [FernoPath] = path.makeFernoPath()
-            let completePath = self.configuration.basePath + fernoPath.childPath
-            let queryString = query.createQuery(authKey: accessToken)
-            let urlString = completePath + queryString
-            var request = ClientRequest(method: method, url: URI(string: urlString), headers: headers, body: nil)
-            try request.content.encode(body)
-            return request
-        }
+    ) async throws -> ClientRequest {
+        let accessToken = try await getAccessToken()
+        let fernoPath: [FernoPath] = path.makeFernoPath()
+        let completePath = self.configuration.basePath + fernoPath.childPath
+        let queryString = query.createQuery(authKey: accessToken)
+        let urlString = completePath + queryString
+        var request = ClientRequest(method: method, url: URI(string: urlString), headers: headers, body: nil)
+        try request.content.encode(body)
+        return request
     }
 
     private func createJWT() throws -> String {
@@ -118,17 +115,24 @@ extension FernoAPIClient {
             exp: .init(value: expirationDate),
             iat: .init(value: currentDate)
         )
-        self.configuration.tokenExpriationDate = expirationDate
         
         return try privateSigner.sign(payload)
     }
 
-    private func getAccessToken() throws -> EventLoopFuture<String> {
-        //if let expireDate = self.expireDate,  Calendar.current.compare(expireDate, to: Date(timeIntervalSinceNow: -120), toGranularity: .second) == .orderedDescending {
-        //    guard let accessToken = self.accessToken else { throw FernoError.invalidAccessToken }
-        //    return EventLoopFuture.map(on: self.httpClient.container) { accessToken }
-        //}
-        //we need to refresh the token
+    private func getAccessToken() async throws -> String {
+        
+        if let cachedToken = lock.withLock({
+            if let accessToken = configuration.accessToken,
+               let tokenExpriationDate = configuration.tokenExpriationDate,
+               Date().timeIntervalSince(tokenExpriationDate) > 30*60 { // should be valid for 1 hour
+                return accessToken
+            } else {
+                return nil
+            }
+        }) {
+            return cachedToken
+        }
+
         configuration.logger.debug("Going to get accessToken")
         let jwt = try createJWT()
         configuration.logger.debug("JWT created")
@@ -143,13 +147,13 @@ extension FernoAPIClient {
             body: nil
         )
         try req.content.encode(oauthBody, as: .urlEncodedForm)
-
-        return self.client.send(req)
-            .flatMapThrowing { try $0.content.decode(OAuthResponse.self) }
-            .map { res in
-                self.configuration.accessToken = res.access_token
-                self.configuration.logger.debug("Access token received")
-                return res.access_token
+        
+        let res = try await client.send(req).content.decode(OAuthResponse.self)
+        lock.withLockVoid {
+            self.configuration.accessToken = res.access_token
+            self.configuration.tokenExpriationDate = Date().addingTimeInterval(TimeInterval(res.expires_in))
         }
+        self.configuration.logger.debug("Access token received")
+        return res.access_token
     }
 }

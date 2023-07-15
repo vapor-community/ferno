@@ -132,7 +132,7 @@ extension Application.Ferno {
     
     /// Deletes everything
     public func delete(_ path: [String]) async throws -> Bool {
-        try await self.client.delete(method: .DELETE, path: path).get()
+        try await self.client.delete(method: .DELETE, path: path)
     }
 
     /// Creates child
@@ -143,7 +143,7 @@ extension Application.Ferno {
             query: [],
             body: body,
             headers: [:]
-        ).get()
+        )
     }
 
 
@@ -155,7 +155,7 @@ extension Application.Ferno {
             query: [],
             body: body,
             headers: [:]
-        ).get()
+        )
     }
 
     /// Updates location, but omitted values won't get replaced
@@ -166,7 +166,7 @@ extension Application.Ferno {
             query: [],
             body: body,
             headers: [:]
-        ).get()
+        )
     }
 
     public func retrieveMany<F: Decodable>(_ path: [String], queryItems: [FernoQuery] = []) async throws -> [String: F] {
@@ -176,7 +176,7 @@ extension Application.Ferno {
             query: queryItems,
             body: "",
             headers: [:]
-        ).get()
+        )
     }
 
     public func retrieve<F: Decodable>(_ path: [String], queryItems: [FernoQuery] = []) async throws -> F {
@@ -186,6 +186,6 @@ extension Application.Ferno {
             query: queryItems,
             body: "",
             headers: [:]
-        ).get()
+        )
     }
 }
