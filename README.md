@@ -4,7 +4,7 @@ Ferno allows you to easily connect your Vapor project with your Firebase realtim
 
 ### Prerequisites
 You will need:
-- Vapor 4.0+
+- Vapor 4.8+
 
 ### Installing
 
