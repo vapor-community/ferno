@@ -11,7 +11,7 @@ You will need:
 In your Package.swift file, add the line
 
 ```swift
-.package(url: "https://github.com/vapor-community/ferno.git", from: "0.4.0")
+.package(url: "https://github.com/vapor-community/ferno.git", from: "0.5.0")
 ```
 
 Also make sure you add `Ferno` as a dependency
