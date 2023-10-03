@@ -6,6 +6,11 @@
 //
 
 import Foundation
+import Vapor
+
+public struct FernoChild: Content {
+    public var name: String
+}
 
 public protocol FernoValue {
     var value: String { get }
