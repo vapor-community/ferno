@@ -1,10 +1,3 @@
-//
-//  String+Extensions.swift
-//  Ferno
-//
-//  Created by Maxim Krouk on 6/12/20.
-//
-
 import JWT
 
 // MARK: - JWT Helper Stuff

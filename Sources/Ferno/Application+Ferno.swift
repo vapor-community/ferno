@@ -1,10 +1,3 @@
-//
-//  Application+Ferno.swift
-//  Ferno
-//
-//  Created by Maxim Krouk on 6/12/20.
-//
-
 import Vapor
 import JWT
 
