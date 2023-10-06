@@ -123,7 +123,7 @@ extension FernoAPIClient {
         
         if let cachedToken = lock.withLock({
             if let accessToken = configuration.accessToken,
-               let tokenExpriationDate = configuration.tokenExpriationDate,
+               let tokenExpriationDate = configuration.tokenExpirationDate,
                Date().timeIntervalSince(tokenExpriationDate) > 30*60 { // should be valid for 1 hour
                 return accessToken
             } else {
@@ -151,7 +151,7 @@ extension FernoAPIClient {
         let res = try await client.send(req).content.decode(OAuthResponse.self)
         lock.withLockVoid {
             self.configuration.accessToken = res.access_token
-            self.configuration.tokenExpriationDate = Date().addingTimeInterval(TimeInterval(res.expires_in))
+            self.configuration.tokenExpirationDate = Date().addingTimeInterval(TimeInterval(res.expires_in))
         }
         self.configuration.logger.debug("Access token received")
         return res.access_token
