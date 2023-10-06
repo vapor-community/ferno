@@ -9,14 +9,13 @@ import Vapor
 import JWT
 
 struct Payload: JWTPayload {
-    
-    func verify(using signer: JWTSigner) throws {
-        try exp.verifyNotExpired()
-    }
-    
     var iss: IssuerClaim
     var scope: String
     var aud: String
     var exp: ExpirationClaim
     var iat: IssuedAtClaim
+    
+    func verify(using signer: JWTSigner) throws {
+        try exp.verifyNotExpired()
+    }
 }

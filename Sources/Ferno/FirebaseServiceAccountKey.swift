@@ -28,7 +28,7 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
         case universeDomain = "universe_domain"
     }
 
-    public init(type: String, 
+    public init(type: String,
                 projectId: String,
                 privateKeyId: String,
                 privateKey: String,

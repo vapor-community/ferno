@@ -7,7 +7,7 @@
 
 import Foundation
 
-//Firebase Path Enum
+// Firebase Path Enum
 public enum FernoPath {
     case child(String)
     case json

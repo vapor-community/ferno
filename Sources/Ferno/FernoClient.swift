@@ -3,14 +3,25 @@ import JWT
 import NIOConcurrencyHelpers
 
 struct OAuthBody: Content {
-    var grant_type: String
+    var grantType: String
     var assertion: String
+
+    private enum CodingKeys: String, CodingKey {
+        case grantType = "grant_type"
+        case assertion
+    }
 }
 
 struct OAuthResponse: Content {
-    var access_token: String
-    var token_type: String
-    var expires_in: Int
+    var accessToken: String
+    var tokenType: String
+    var expiresIn: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case accessToken = "access_token"
+        case tokenType = "token_type"
+        case expiresIn = "expires_in"
+    }
 }
 
 public protocol FernoClient {
@@ -18,7 +29,7 @@ public protocol FernoClient {
         method: HTTPMethod,
         path: [String]
     ) async throws -> Bool
-    
+
     func send<F: Decodable, T: Content>(
         method: HTTPMethod,
         path: [String],
@@ -26,7 +37,7 @@ public protocol FernoClient {
         body: T,
         headers: HTTPHeaders
     ) async throws -> F
-    
+
     func sendMany<F: Decodable, T: Content>(
         method: HTTPMethod,
         path: [String],
@@ -115,12 +126,12 @@ extension FernoAPIClient {
             exp: .init(value: expirationDate),
             iat: .init(value: currentDate)
         )
-        
+
         return try privateSigner.sign(payload)
     }
 
     private func getAccessToken() async throws -> String {
-        
+
         if let cachedToken = lock.withLock({
             if let accessToken = configuration.accessToken,
                let tokenExpriationDate = configuration.tokenExpriationDate,
@@ -136,10 +147,10 @@ extension FernoAPIClient {
         configuration.logger.debug("Going to get accessToken")
         let jwt = try createJWT()
         configuration.logger.debug("JWT created")
-        
+
         var headers = HTTPHeaders()
         headers.add(name: .contentType, value: "application/x-www-form-urlencoded")
-        let oauthBody = OAuthBody(grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt)
+        let oauthBody = OAuthBody(grantType: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt)
         var req = ClientRequest(
             method: .POST,
             url: URI(string: "https://www.googleapis.com/oauth2/v4/token"),
@@ -147,13 +158,13 @@ extension FernoAPIClient {
             body: nil
         )
         try req.content.encode(oauthBody, as: .urlEncodedForm)
-        
+
         let res = try await client.send(req).content.decode(OAuthResponse.self)
         lock.withLockVoid {
-            self.configuration.accessToken = res.access_token
-            self.configuration.tokenExpriationDate = Date().addingTimeInterval(TimeInterval(res.expires_in))
+            self.configuration.accessToken = res.accessToken
+            self.configuration.tokenExpriationDate = Date().addingTimeInterval(TimeInterval(res.expiresIn))
         }
         self.configuration.logger.debug("Access token received")
-        return res.access_token
+        return res.accessToken
     }
 }

@@ -11,7 +11,7 @@ import Vapor
 public protocol FernoDriver {
     /// Makes the ferno client
     func makeClient(with config: FernoConfiguration) -> FernoClient
-    
+
     /// Shuts down the driver
     func shutdown()
 }
