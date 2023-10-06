@@ -30,4 +30,14 @@ public struct FernoConfiguration {
         self.tokenExpriationDate = tokenExpriationDate
         self.logger = logger
     }
+
+    public init(jsonConfiguration: FirebaseServiceAccountKey,
+                tokenExpriationDate: Date? = nil,
+                logger: Logger = .init(label: "codes.vapor.ferno")) {
+        self.basePath = jsonConfiguration.basePath
+        self.email = jsonConfiguration.clientEmail
+        self.privateKey = jsonConfiguration.privateKey
+        self.tokenExpriationDate = tokenExpriationDate
+        self.logger = logger
+    }
 }
