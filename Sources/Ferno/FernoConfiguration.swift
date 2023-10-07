@@ -7,7 +7,16 @@
 
 import Vapor
 
-public struct FernoConfiguration {
+public protocol Configuration {
+    var logger: Logger { get }
+    var basePath: String { get }
+    var email: String { get }
+    var privateKey: String { get }
+    var accessToken: String? { get set }
+    var tokenExpriationDate: Date? { get set }
+}
+
+public struct FernoConfiguration: Configuration {
     public let logger: Logger
     public let basePath: String
     public let email: String
@@ -27,16 +36,6 @@ public struct FernoConfiguration {
         self.email = email
         self.privateKey = privateKey
         self.accessToken = accessToken
-        self.tokenExpriationDate = tokenExpriationDate
-        self.logger = logger
-    }
-
-    public init(jsonConfiguration: FirebaseServiceAccountKey,
-                tokenExpriationDate: Date? = nil,
-                logger: Logger = .init(label: "codes.vapor.ferno")) {
-        self.basePath = jsonConfiguration.basePath
-        self.email = jsonConfiguration.clientEmail
-        self.privateKey = jsonConfiguration.privateKey
         self.tokenExpriationDate = tokenExpriationDate
         self.logger = logger
     }

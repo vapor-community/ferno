@@ -25,13 +25,20 @@ extension Application {
                     app.ferno.use(custom: DefaultFernoDriver(client: app.client))
                 }
             }
+
+            public static func serviceAccountKey(_ configuration: FirebaseConfiguration) -> Self {
+                .init { app in
+                    app.ferno.use(configuration)
+                    app.ferno.use(custom: ServiceAccountKeyFernoDriver(client: app.client))
+                }
+            }
         }
 
         final class Storage {
-            public var configuration: FernoConfiguration
+            public var configuration: Configuration
             public var driver: FernoDriver?
 
-            public init(config: FernoConfiguration) {
+            public init(config: Configuration) {
                 self.configuration = config
             }
         }
@@ -47,7 +54,7 @@ extension Application {
         public let application: Application
 
         /// The `FernoConfiguration` object
-        public var configuration: FernoConfiguration {
+        public var configuration: any Configuration {
             get { self.storage.configuration }
             nonmutating set { self.storage.configuration = newValue }
         }
@@ -77,7 +84,7 @@ extension Application {
             provider.run(self.application)
         }
 
-        public func use(_ config: FernoConfiguration) {
+        public func use(_ config: Configuration) {
             self.application.storage[Key.self] = .init(config: config)
             self.initialize()
         }

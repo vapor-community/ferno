@@ -50,10 +50,10 @@ public protocol FernoClient {
 final class FernoAPIClient: FernoClient {
     private let decoder = JSONDecoder()
     private let client: Client
-    private(set) public var configuration: FernoConfiguration
+    private(set) public var configuration: Configuration
     private let lock = NIOLock()
 
-    public init(configuration: FernoConfiguration, client: Client) {
+    public init(configuration: Configuration, client: Client) {
         self.configuration = configuration
         self.client = client
     }

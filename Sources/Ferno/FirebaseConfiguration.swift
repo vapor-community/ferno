@@ -1,13 +1,16 @@
 import Vapor
 
-public struct FirebaseServiceAccountKey: Content, Sendable {
+public struct FirebaseConfiguration: Configuration, Content, Sendable {
     public let type: String
     public let projectId: String
-    public let clientEmail: String
+    public let email: String
     public let clientId: String
     public let basePath: String
+    public var accessToken: String?
+    public var tokenExpriationDate: Date?
+    public var logger: Logger = .init(label: "codes.vapor.ferno")
+    public let privateKey: String
     internal let privateKeyId: String
-    internal let privateKey: String
     internal let authUri: String
     internal let tokenUri: String
     internal let authProviderX509CertUrl: String
@@ -19,7 +22,7 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
         case projectId = "project_id"
         case privateKeyId = "private_key_id"
         case privateKey = "private_key"
-        case clientEmail = "client_email"
+        case email = "client_email"
         case clientId = "client_id"
         case authUri = "auth_uri"
         case tokenUri = "token_uri"
@@ -43,7 +46,7 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
         self.projectId = projectId
         self.privateKeyId = privateKeyId
         self.privateKey = privateKey
-        self.clientEmail = clientEmail
+        self.email = clientEmail
         self.clientId = clientId
         self.authUri = authUri
         self.tokenUri = tokenUri
@@ -54,12 +57,12 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
     }
 
     public init(json: Data) throws {
-        let configuration = try JSONDecoder().decode(FirebaseServiceAccountKey.self, from: json)
+        let configuration = try JSONDecoder().decode(FirebaseConfiguration.self, from: json)
         self.type = configuration.type
         self.projectId = configuration.projectId
         self.privateKeyId = configuration.privateKeyId
         self.privateKey = configuration.privateKey
-        self.clientEmail = configuration.clientEmail
+        self.email = configuration.email
         self.clientId = configuration.clientId
         self.authUri = configuration.authUri
         self.tokenUri = configuration.tokenUri
@@ -70,12 +73,12 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
     }
 
     public init(json: ByteBuffer) throws {
-        let configuration = try JSONDecoder().decode(FirebaseServiceAccountKey.self, from: json)
+        let configuration = try JSONDecoder().decode(FirebaseConfiguration.self, from: json)
         self.type = configuration.type
         self.projectId = configuration.projectId
         self.privateKeyId = configuration.privateKeyId
         self.privateKey = configuration.privateKey
-        self.clientEmail = configuration.clientEmail
+        self.email = configuration.email
         self.clientId = configuration.clientId
         self.authUri = configuration.authUri
         self.tokenUri = configuration.tokenUri
@@ -86,19 +89,18 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
     }
 
     public init(from decoder: Decoder) throws {
-        let container: KeyedDecodingContainer<FirebaseServiceAccountKey.CodingKeys> = try decoder.container(keyedBy: FirebaseServiceAccountKey.CodingKeys.self)
-
-        self.type = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.type)
-        self.projectId = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.projectId)
-        self.privateKeyId = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.privateKeyId)
-        self.privateKey = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.privateKey)
-        self.clientEmail = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.clientEmail)
-        self.clientId = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.clientId)
-        self.authUri = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.authUri)
-        self.tokenUri = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.tokenUri)
-        self.authProviderX509CertUrl = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.authProviderX509CertUrl)
-        self.clientX509CertUrl = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.clientX509CertUrl)
-        self.universeDomain = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.universeDomain)
+        let container: KeyedDecodingContainer<FirebaseConfiguration.CodingKeys> = try decoder.container(keyedBy: FirebaseConfiguration.CodingKeys.self)
+        self.type = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.type)
+        self.projectId = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.projectId)
+        self.privateKeyId = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.privateKeyId)
+        self.privateKey = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.privateKey)
+        self.email = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.email)
+        self.clientId = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.clientId)
+        self.authUri = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.authUri)
+        self.tokenUri = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.tokenUri)
+        self.authProviderX509CertUrl = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.authProviderX509CertUrl)
+        self.clientX509CertUrl = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.clientX509CertUrl)
+        self.universeDomain = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.universeDomain)
         self.basePath = "https://\(projectId).firebaseio.com"
     }
 }
