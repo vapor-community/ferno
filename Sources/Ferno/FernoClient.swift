@@ -122,7 +122,7 @@ extension FernoAPIClient {
                 "https://www.googleapis.com/auth/userinfo.email",
                 "https://www.googleapis.com/auth/firebase.database"
             ].joined(separator: " "),
-            aud: "https://www.googleapis.com/oauth2/v4/token",
+            aud: "https://oauth2.googleapis.com/token",
             exp: .init(value: expirationDate),
             iat: .init(value: currentDate)
         )
