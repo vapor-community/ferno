@@ -50,7 +50,7 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
         self.authProviderX509CertUrl = authProviderX509CertUrl
         self.clientX509CertUrl = clientX509CertUrl
         self.universeDomain = universeDomain
-        self.basePath = "https://\(clientId).firebaseio.com"
+        self.basePath = "https://\(projectId).firebaseio.com"
     }
 
     public init(json: Data) throws {
@@ -66,7 +66,7 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
         self.authProviderX509CertUrl = configuration.authProviderX509CertUrl
         self.clientX509CertUrl = configuration.clientX509CertUrl
         self.universeDomain = configuration.universeDomain
-        self.basePath = "https://\(clientId).firebaseio.com"
+        self.basePath = "https://\(projectId).firebaseio.com"
     }
 
     public init(json: ByteBuffer) throws {
@@ -82,7 +82,7 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
         self.authProviderX509CertUrl = configuration.authProviderX509CertUrl
         self.clientX509CertUrl = configuration.clientX509CertUrl
         self.universeDomain = configuration.universeDomain
-        self.basePath = "https://\(clientId).firebaseio.com"
+        self.basePath = "https://\(projectId).firebaseio.com"
     }
 
     public init(from decoder: Decoder) throws {
@@ -99,6 +99,6 @@ public struct FirebaseServiceAccountKey: Content, Sendable {
         self.authProviderX509CertUrl = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.authProviderX509CertUrl)
         self.clientX509CertUrl = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.clientX509CertUrl)
         self.universeDomain = try container.decode(String.self, forKey: FirebaseServiceAccountKey.CodingKeys.universeDomain)
-        self.basePath = "https://\(clientId).firebaseio.com"
+        self.basePath = "https://\(projectId).firebaseio.com"
     }
 }
