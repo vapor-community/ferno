@@ -50,10 +50,10 @@ public protocol FernoClient {
 final class FernoAPIClient: FernoClient {
     private let decoder = JSONDecoder()
     private let client: Client
-    private(set) public var configuration: Configuration
+    private(set) public var configuration: FernoConfigurationProvider
     private let lock = NIOLock()
 
-    public init(configuration: Configuration, client: Client) {
+    public init(configuration: FernoConfigurationProvider, client: Client) {
         self.configuration = configuration
         self.client = client
     }
@@ -122,7 +122,7 @@ extension FernoAPIClient {
                 "https://www.googleapis.com/auth/userinfo.email",
                 "https://www.googleapis.com/auth/firebase.database"
             ].joined(separator: " "),
-            aud: "https://oauth2.googleapis.com/token",
+            aud: configuration.tokenURI,
             exp: .init(value: expirationDate),
             iat: .init(value: currentDate)
         )
@@ -153,7 +153,7 @@ extension FernoAPIClient {
         let oauthBody = OAuthBody(grantType: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt)
         var req = ClientRequest(
             method: .POST,
-            url: URI(string: "https://oauth2.googleapis.com/token"),
+            url: URI(string: configuration.tokenURI),
             headers: headers,
             body: nil
         )

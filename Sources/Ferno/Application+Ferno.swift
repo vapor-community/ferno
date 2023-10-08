@@ -35,10 +35,10 @@ extension Application {
         }
 
         final class Storage {
-            public var configuration: Configuration
+            public var configuration: FernoConfigurationProvider
             public var driver: FernoDriver?
 
-            public init(config: Configuration) {
+            public init(config: FernoConfigurationProvider) {
                 self.configuration = config
             }
         }
@@ -54,7 +54,7 @@ extension Application {
         public let application: Application
 
         /// The `FernoConfiguration` object
-        public var configuration: any Configuration {
+        public var configuration: any FernoConfigurationProvider {
             get { self.storage.configuration }
             nonmutating set { self.storage.configuration = newValue }
         }
@@ -84,7 +84,7 @@ extension Application {
             provider.run(self.application)
         }
 
-        public func use(_ config: Configuration) {
+        public func use(_ config: FernoConfigurationProvider) {
             self.application.storage[Key.self] = .init(config: config)
             self.initialize()
         }
