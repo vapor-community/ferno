@@ -18,18 +18,25 @@ extension Application {
             public init(_ run: @escaping (Application) -> Void) {
                 self.run = run
             }
-
+            @available(*, deprecated)
             public static func `default`(_ configuration: FernoConfiguration) -> Self {
                 .init { app in
                     app.ferno.use(configuration)
-                    app.ferno.use(custom: DefaultFernoDriver(client: app.client))
+                    app.ferno.use(custom: FernoDefaultDriver(client: app.client))
+                }
+            }
+            
+            public static func `default`(_ configuration: FernoDefaultConfiguration) -> Self {
+                .init { app in
+                    app.ferno.use(configuration)
+                    app.ferno.use(custom: FernoDefaultDriver(client: app.client))
                 }
             }
 
-            public static func serviceAccountKey(_ configuration: FirebaseConfiguration) -> Self {
+            public static func serviceAccountKey(_ configuration: FernoServiceAccountKeyConfiguration) -> Self {
                 .init { app in
                     app.ferno.use(configuration)
-                    app.ferno.use(custom: ServiceAccountKeyFernoDriver(client: app.client))
+                    app.ferno.use(custom: FernoServiceAccountKeyDriver(client: app.client))
                 }
             }
         }

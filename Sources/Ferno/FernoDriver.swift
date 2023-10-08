@@ -16,13 +16,13 @@ public protocol FernoDriver {
     func shutdown()
 }
 
-struct DefaultFernoDriver: FernoDriver {
+struct FernoDefaultDriver: FernoDriver {
     var client: Client
     func makeClient(with config: FernoConfigurationProvider) -> FernoClient { FernoAPIClient(configuration: config, client: client) }
     func shutdown() {}
 }
 
-struct ServiceAccountKeyFernoDriver: FernoDriver {
+struct FernoServiceAccountKeyDriver: FernoDriver {
     var client: Client
     func makeClient(with config: FernoConfigurationProvider) -> FernoClient { FernoAPIClient(configuration: config, client: client) }
     func shutdown() {}

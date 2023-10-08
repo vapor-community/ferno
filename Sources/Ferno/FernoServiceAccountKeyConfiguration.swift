@@ -1,6 +1,6 @@
 import Vapor
 
-public struct FirebaseConfiguration: FernoConfigurationProvider, Content {
+public struct FernoServiceAccountKeyConfiguration: FernoConfigurationProvider, Content {
     public let type: String
     public let projectId: String
     public let email: String
@@ -59,7 +59,7 @@ public struct FirebaseConfiguration: FernoConfigurationProvider, Content {
     }
 
     public init(json: Data, logger: Logger = .init(label: "codes.vapor.ferno")) throws {
-        let configuration = try JSONDecoder().decode(FirebaseConfiguration.self, from: json)
+        let configuration = try JSONDecoder().decode(FernoServiceAccountKeyConfiguration.self, from: json)
         self.type = configuration.type
         self.projectId = configuration.projectId
         self.privateKeyId = configuration.privateKeyId
@@ -76,7 +76,7 @@ public struct FirebaseConfiguration: FernoConfigurationProvider, Content {
     }
 
     public init(json: ByteBuffer, logger: Logger = .init(label: "codes.vapor.ferno")) throws {
-        let configuration = try JSONDecoder().decode(FirebaseConfiguration.self, from: json)
+        let configuration = try JSONDecoder().decode(FernoServiceAccountKeyConfiguration.self, from: json)
         self.type = configuration.type
         self.projectId = configuration.projectId
         self.privateKeyId = configuration.privateKeyId
@@ -93,18 +93,18 @@ public struct FirebaseConfiguration: FernoConfigurationProvider, Content {
     }
 
     public init(from decoder: Decoder) throws {
-        let container: KeyedDecodingContainer<FirebaseConfiguration.CodingKeys> = try decoder.container(keyedBy: FirebaseConfiguration.CodingKeys.self)
-        self.type = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.type)
-        self.projectId = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.projectId)
-        self.privateKeyId = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.privateKeyId)
-        self.privateKey = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.privateKey)
-        self.email = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.email)
-        self.clientId = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.clientId)
-        self.authURI = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.authURI)
-        self.tokenURI = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.tokenURI)
-        self.authProviderX509CertURL = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.authProviderX509CertURL)
-        self.clientX509CertURL = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.clientX509CertURL)
-        self.universeDomain = try container.decode(String.self, forKey: FirebaseConfiguration.CodingKeys.universeDomain)
+        let container: KeyedDecodingContainer<FernoServiceAccountKeyConfiguration.CodingKeys> = try decoder.container(keyedBy: FernoServiceAccountKeyConfiguration.CodingKeys.self)
+        self.type = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.type)
+        self.projectId = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.projectId)
+        self.privateKeyId = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.privateKeyId)
+        self.privateKey = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.privateKey)
+        self.email = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.email)
+        self.clientId = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.clientId)
+        self.authURI = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.authURI)
+        self.tokenURI = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.tokenURI)
+        self.authProviderX509CertURL = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.authProviderX509CertURL)
+        self.clientX509CertURL = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.clientX509CertURL)
+        self.universeDomain = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.universeDomain)
         self.basePath = "https://\(projectId).firebaseio.com"
     }
 }
