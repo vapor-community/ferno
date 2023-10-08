@@ -91,7 +91,26 @@ public struct FernoServiceAccountKeyConfiguration: FernoConfigurationProvider, C
         self.logger = logger
         self.basePath = "https://\(projectId).firebaseio.com"
     }
-
+    
+    /// The `ServiceAccountKey.json` path in URL format
+    public init(path: URL, logger: Logger = .init(label: "codes.vapor.ferno")) throws {
+        let data = try Data(contentsOf: path)
+        let configuration = try JSONDecoder().decode(FernoServiceAccountKeyConfiguration.self, from: data)
+        self.type = configuration.type
+        self.projectId = configuration.projectId
+        self.privateKeyId = configuration.privateKeyId
+        self.privateKey = configuration.privateKey
+        self.email = configuration.email
+        self.clientId = configuration.clientId
+        self.authURI = configuration.authURI
+        self.tokenURI = configuration.tokenURI
+        self.authProviderX509CertURL = configuration.authProviderX509CertURL
+        self.clientX509CertURL = configuration.clientX509CertURL
+        self.universeDomain = configuration.universeDomain
+        self.logger = logger
+        self.basePath = "https://\(projectId).firebaseio.com"
+    }
+    
     public init(from decoder: Decoder) throws {
         let container: KeyedDecodingContainer<FernoServiceAccountKeyConfiguration.CodingKeys> = try decoder.container(keyedBy: FernoServiceAccountKeyConfiguration.CodingKeys.self)
         self.type = try container.decode(String.self, forKey: FernoServiceAccountKeyConfiguration.CodingKeys.type)
