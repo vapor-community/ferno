@@ -153,7 +153,7 @@ extension FernoAPIClient {
         let oauthBody = OAuthBody(grantType: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt)
         var req = ClientRequest(
             method: .POST,
-            url: URI(string: "https://www.googleapis.com/oauth2/v4/token"),
+            url: URI(string: "https://oauth2.googleapis.com/token"),
             headers: headers,
             body: nil
         )
