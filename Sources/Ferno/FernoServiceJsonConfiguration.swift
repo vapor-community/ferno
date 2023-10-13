@@ -7,7 +7,7 @@ public struct FernoServiceJsonConfiguration: FernoConfigurationProvider, Content
     public let clientId: String
     public let basePath: String
     public var accessToken: String?
-    public var tokenExpriationDate: Date?
+    public var tokenExpirationDate: Date?
     public var logger: Logger = .init(label: "codes.vapor.ferno")
     public let privateKey: String
     public let tokenURI: String

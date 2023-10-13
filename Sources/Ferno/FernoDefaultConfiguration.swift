@@ -13,7 +13,7 @@ public protocol FernoConfigurationProvider {
     var email: String { get }
     var privateKey: String { get }
     var accessToken: String? { get set }
-    var tokenExpriationDate: Date? { get set }
+    var tokenExpirationDate: Date? { get set }
     var tokenURI: String { get }
 }
 
@@ -24,7 +24,7 @@ public struct FernoConfiguration: FernoConfigurationProvider {
     public let email: String
     public let privateKey: String
     public var accessToken: String?
-    public var tokenExpriationDate: Date?
+    public var tokenExpirationDate: Date?
     public let tokenURI: String = "https://oauth2.googleapis.com/token"
     public init(
         basePath: String,
@@ -38,7 +38,7 @@ public struct FernoConfiguration: FernoConfigurationProvider {
         self.email = email
         self.privateKey = privateKey
         self.accessToken = accessToken
-        self.tokenExpriationDate = tokenExpriationDate
+        self.tokenExpirationDate = tokenExpriationDate
         self.logger = logger
     }
 }
@@ -49,7 +49,7 @@ public struct FernoDefaultConfiguration: FernoConfigurationProvider {
     public let email: String
     public let privateKey: String
     public var accessToken: String?
-    public var tokenExpriationDate: Date?
+    public var tokenExpirationDate: Date?
     public let tokenURI: String = "https://oauth2.googleapis.com/token"
     
     public init(
@@ -57,14 +57,14 @@ public struct FernoDefaultConfiguration: FernoConfigurationProvider {
         email: String,
         privateKey: String,
         accessToken: String? = nil,
-        tokenExpriationDate: Date? = nil,
+        tokenExpirationDate: Date? = nil,
         logger: Logger = .init(label: "codes.vapor.ferno")
     ) {
         self.basePath = basePath
         self.email = email
         self.privateKey = privateKey
         self.accessToken = accessToken
-        self.tokenExpriationDate = tokenExpriationDate
+        self.tokenExpirationDate = tokenExpirationDate
         self.logger = logger
     }
 }
