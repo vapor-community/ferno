@@ -33,7 +33,7 @@ extension Application {
                 }
             }
 
-            public static func serviceAccountKey(_ configuration: FernoServiceAccountKeyConfiguration) -> Self {
+            public static func serviceAccountKey(_ configuration: FernoServiceJsonConfiguration) -> Self {
                 .init { app in
                     app.ferno.use(configuration)
                     app.ferno.use(custom: FernoServiceAccountKeyDriver(client: app.client))
