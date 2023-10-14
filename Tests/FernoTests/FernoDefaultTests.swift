@@ -8,29 +8,11 @@
 import XCTVapor
 import Ferno
 
-struct Teacher: Content {
-    var name: String
-    var teachesGrade: String
-    var age: Int
-}
-
-struct UpdateStudentInfo: Content {
-    var major: String
-}
-
-struct Student: Content {
-    var name: String
-    var major: String
-    var school: String
-    var age: Int
-    var willGraduate: Bool
-}
-
-final class FirebaseTests: XCTestCase {
+final class FernoDefaultTests: XCTestCase {
 
     // GET a student
     func testGetStudent() async throws {
-        try await launch { app in
+        try await defaultLaunch { app in
             // Create 3 new students
             let austin = Student(name: "Austin", major: "Computer Science",
                                           school: "Cornell University", age: 21, willGraduate: true)
@@ -49,7 +31,7 @@ final class FirebaseTests: XCTestCase {
 
     // GET students
     func testGetStudents() async throws {
-        try await launch { app in
+        try await defaultLaunch { app in
             // Create 3 new students
             let austin = Student(name: "Austin", major: "Computer Science",
                                           school: "Cornell University", age: 21, willGraduate: true)
@@ -94,7 +76,7 @@ final class FirebaseTests: XCTestCase {
 
     // POST Student
     func testCreateStudent() async throws {
-        try await launch { app in
+        try await defaultLaunch { app in
             let student = Student(name: "Matt", major: "Computer Science",
                                            school: "Cornell University", age: 20, willGraduate: true)
             let child = try await app.ferno.create(body: student)
@@ -108,7 +90,7 @@ final class FirebaseTests: XCTestCase {
 
     // DELETE student
     func testDeleteStudent() async throws {
-        try await launch { app in
+        try await defaultLaunch { app in
             let timothy = Student(name: "Timothy", major: "Agriculture",
                                            school: "Mira Costa Community", age: 24, willGraduate: false)
 
@@ -121,7 +103,7 @@ final class FirebaseTests: XCTestCase {
 
     // PATCH update student
     func testUpdateStudent() async throws {
-        try await launch { app in
+        try await defaultLaunch { app in
             let austin = Student(name: "Austin", major: "Computer Science",
                                           school: "Cornell Univeristy", age: 21, willGraduate: true)
             let child = try await app.ferno.create(["Students-patch"], body: austin)
@@ -138,7 +120,7 @@ final class FirebaseTests: XCTestCase {
 
     // PUT overwrite student
     func testOverwriteStudent() async throws {
-        try await launch { app in
+        try await defaultLaunch { app in
             let austin = Student(name: "Austin", major: "Computer Science",
                                           school: "Cornell Univeristy", age: 21, willGraduate: true)
             let child = try await app.ferno.create(["Students-put"], body: austin)

@@ -1,6 +1,6 @@
 import Vapor
 
-public struct FernoServiceJsonConfiguration: FernoConfigurationProvider, Content {
+public struct FernoServiceJsonConfiguration: FernoConfigurationProvider, Decodable, Sendable {
     public let type: String
     public let projectId: String
     public let email: String

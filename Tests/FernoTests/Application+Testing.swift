@@ -8,7 +8,7 @@
 import Ferno
 import XCTVapor
 
-func launch(_ test: (Application) async throws -> Void) async throws {
+func defaultLaunch(_ test: (Application) async throws -> Void) async throws {
     let app = Application(.testing)
     defer { app.shutdown() }
     app.ferno.use(
@@ -19,6 +19,18 @@ func launch(_ test: (Application) async throws -> Void) async throws {
                 privateKey: "private-key"
             )
         )
+    )
+    try await test(app)
+}
+
+func serviceJsonLaunch(_ test: (Application) async throws -> Void) async throws {
+    let app = Application(.testing)
+    guard let json = FirebaseAccountKey.json.data(using: .utf8) else { return }
+    
+    let configuration = try FernoServiceJsonConfiguration(json: json)
+    defer { app.shutdown() }
+    app.ferno.use(
+        .serviceAccountKey(configuration)
     )
     try await test(app)
 }
