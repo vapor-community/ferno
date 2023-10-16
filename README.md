@@ -72,6 +72,21 @@ let fernoConfiguration = try FernoServiceJsonConfiguration(json: Data)
 // option 2
 let fernoConfiguration = try FernoServiceJsonConfiguration(path: URL)
 
+// option 3
+let fernoConfiguration = FernoServiceJsonConfiguration(
+                type: String,
+                projectId: String,
+                privateKeyId: String,
+                privateKey: String,
+                clientEmail: String,
+                clientId: String,
+                authUri: String,
+                tokenUri: String,
+                authProviderX509CertUrl: String,
+                clientX509CertUrl: String,
+                universeDomain: String
+)
+
 app.ferno.use(.serviceAccountKey(fernoConfiguration))
 ```
 
