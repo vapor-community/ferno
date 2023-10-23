@@ -24,7 +24,10 @@ dependencies: [
 
 ## Setup
 
+### Legacy setup
+
 1. Ferno uses an access token to read and write to your database. First we will need to get your service account information.
+
     * Log into the Firebase console
     * Click the settings gear next to `Project Overview`
     * Select `Project settings`
@@ -34,10 +37,23 @@ dependencies: [
 
 2. Register `Ferno` as a Provider and import `Ferno`. This is usually done in `configure.swift`
 
+### FirebaseSDK setup
+
+  1. Log into the Firebase console
+  2. Click the settings gear next to `Project Overview`
+  3. Select `Project settings`
+  4. Select the `SERVICE ACCOUNTS` tab
+  5. Select `Firebase Admin SDK` option
+  6. Click the button `Generate new private key` to download the json file.
+
+### Ferno setup
+
+You can use the content of json file information to fill out the `FernoDefaultConfiguration` or use the json file to preper the `FernoServiceJsonConfiguration`.
+
 ```swift
 import Ferno
 
-let fernoConfiguration = FernoConfiguration(
+let fernoConfiguration = FernoDefaultConfiguration(
     basePath: "database-url", 
     email: "service-account-email", 
     privateKey: "private-key"
@@ -45,13 +61,45 @@ let fernoConfiguration = FernoConfiguration(
 app.ferno.use(.default(fernoConfiguration))
 ```
 
+If you prefer to use the Firebase `ServiceAccount.json` follow the example below.
+
+```swift
+import Ferno
+
+// option 1
+let fernoConfiguration = try FernoServiceJsonConfiguration(json: Data)
+
+// option 2
+let fernoConfiguration = try FernoServiceJsonConfiguration(path: URL)
+
+// option 3
+let fernoConfiguration = FernoServiceJsonConfiguration(
+                type: String,
+                projectId: String,
+                privateKeyId: String,
+                privateKey: String,
+                clientEmail: String,
+                clientId: String,
+                authUri: String,
+                tokenUri: String,
+                authProviderX509CertUrl: String,
+                clientX509CertUrl: String,
+                universeDomain: String
+)
+
+app.ferno.use(.serviceAccountKey(fernoConfiguration))
+```
+
 ## Parameters
+
 There are some custom parameters to pass into functions. I want to go over all the parameters you will need to know.
 
 ### [FernoQuery]
+
 In GET requests, you might want to query on your data. This is what `[FernoQuery]` is for.
 
 `FernoQuery` is an enum with:
+
    1. `case shallow(Bool)`
    2. `case orderBy(FernoValue)`
    3. `case limitToFirst(FernoValue)`
@@ -63,52 +111,69 @@ In GET requests, you might want to query on your data. This is what `[FernoQuery
 These are all the possible queries that are allowed on Firebase according to the [docs](https://firebase.google.com/docs/reference/rest/database/#section-query-parameters)
 
 #### NOTES on [FernoQuery]
+
 -  `shallow(Bool)` cannot be mixed with any other query parameters.
 - you usually use `orderBy(FernoValue)` in conjunction with enums `3-7`
 - using `orderBy(FernoValue)` alone will just order the data returned
 
 #### FernoValue
+
 You will notice most cases in `FernoQuery` have a value of `FernoValue`.
 `FernoValue` is just a wrapper for `Bool, String, Int, Double, Float`. So you can just do `.startAt(5)` and everything will work.
 
 #### Examples of [FernoQuery]
-Just using shallow: 
+
+Just using shallow:
+
 ```swift
 [.shallow(true)]
 ```
+
 Filter data to only return data that matches `"age": 21`:
+
 ```swift
 [.orderBy("age"), .equalTo(21)]
 ```
 
 Just orderBy(returns data in ascending order):
+
 ```swift
 [.orderBy("age")]
 ```
 
 ## Usage
+
 There are 6 functions that allow you to interact with your Firebase realtime database.
 
 ### GET
+
 There are four functions that allow you get your data.
+
 ```swift
 app.ferno.retrieve(_ path: [String], queryItems: [FernoQuery] = [])
 ```
+
 ```swift
 app.ferno.retrieve(_ path: String..., queryItems: [FernoQuery] = [])
 ```
+
 ```swift
 app.ferno.retrieveMany(_ path: [String], queryItems: [FernoQuery] = [])
 ```
+
 ```swift
 app.ferno.retrieveMany(_ path: String..., queryItems: [FernoQuery] = [])
 ```
+
 The only difference between `retrieve` and `retrieveMany` is the return type.
+
 - `retrieve` returns -> `F` where `F` is of type `Decodable`
 - `retrieveMany` returns -> `[String: F]` where `F` is of type `Decodable` and `String` is the key
 
 #### Example
-1. Define the value you want the data converted. 
+
+1. Define the value you want the data converted.
+
 ```swift
 struct Developer: Content {
    var name: String
@@ -118,19 +183,24 @@ struct Developer: Content {
 ```
 
 2. Make the request. Make sure you set the type of the response so Ferno knows what to convert.
+
 ```swift
 let developers: [String: Developer] = try await app.ferno.retrieveMany("developers")
 let developer: Developer = try await app.ferno.retrieve(["developers", "dev1"])
 ```
 
 ### POST
+
 Used to create a new entry in your database
+
 ```swift
 app.ferno.create(_ path: [String], body: T) try await -> FernoChild
 ```
+
 ```swift
 app.ferno.create(_ path: String..., body: T) try await -> FernoChild
 ```
+
 - `body: T` is of type `Content`.
 - `FernoChild` is a struct:
 
@@ -143,37 +213,48 @@ struct FernoChild: Content {
 - `FernoChild` is returned, because the API request returns the key from the newly created child.
 
 #### Example
+
 ```swift
 let newDeveloper = Developer(name: "Elon", favLanguage: "Python", age: 46) // conforms to Content
 let newDeveloperKey: FernoChild = try await app.ferno.create("developers", body: newDeveloper)
 ```
 
 ### DELETE
+
 Used to delete an entry in your database
+
 ```swift
 app.ferno.delete(_ path: [String]) try await -> Bool
 ```
+
 ```swift
 app.ferno.delete(_ path: String...) try await -> Bool
 ```
+
 - the delete method will return a boolean depending on if the delete was successful
 
 #### Example
+
 ```swift
 let successfulDelete: Bool = try await app.ferno.delete(["developers", "dev-1"])
 ```
 
 ### PATCH
+
 Update values at a specific location, but omitted values won't get removed
+
 ```swift
 app.ferno.update(_ path: [String], body: T) try await -> T
 ```
+
 ```swift
 app.ferno.update(_ path: String..., body: T) try await -> T
 ```
+
 - the update method will return the body
 
 ### Example
+
 ```swift
 struct UpdateDeveloperName: Content {
   var name: String
@@ -184,14 +265,19 @@ let updatedDeveloperName: UpdateDeveloperName = try await app.ferno.update(["dev
 ```
 
 ### PUT
+
 Overwrite the current location with data you are passing in
+
 ```swift
 client.ferno.overwrite(_ path: [String], body: T) try await -> T
 ```
+
 ```swift
 client.ferno.overwrite(_ path: String..., body: T) try await -> T
 ```
+
 #### Example
+
 ```swift
 struct LeadDeveloper: Content {
   var name: String
@@ -225,4 +311,3 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 * Vapor Discord (for helping me with all my issues <3)
 * Stripe Provider as a great template! [stripe-provider](https://github.com/vapor-community/stripe-provider)
-

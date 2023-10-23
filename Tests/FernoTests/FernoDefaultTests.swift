@@ -8,32 +8,14 @@
 import XCTVapor
 import Ferno
 
-struct Teacher: Content {
-    var name: String
-    var teachesGrade: String
-    var age: Int
-}
+final class FernoDefaultTests: XCTestCase {
 
-struct UpdateStudentInfo: Content {
-    var major: String
-}
-
-struct Student: Content {
-    var name: String
-    var major: String
-    var school: String
-    var age: Int
-    var willGraduate: Bool
-}
-
-final class FirebaseTests: XCTestCase {
-
-    //GET a student
+    // GET a student
     func testGetStudent() async throws {
-        try await launch { app in
-            
-            //Create 3 new students
-            let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell University", age: 21, willGraduate: true)
+        try await defaultLaunch { app in
+            // Create 3 new students
+            let austin = Student(name: "Austin", major: "Computer Science",
+                                          school: "Cornell University", age: 21, willGraduate: true)
             let child = try await app.ferno.create(["Student-get"], body: austin)
 
             let student: Student = try await app.ferno.retrieve(["Student-get", child.name], queryItems: [])
@@ -47,26 +29,30 @@ final class FirebaseTests: XCTestCase {
         }
     }
 
-    //GET students
+    // GET students
     func testGetStudents() async throws {
-        try await launch { app in
+        try await defaultLaunch { app in
+            // Create 3 new students
+            let austin = Student(name: "Austin", major: "Computer Science",
+                                          school: "Cornell University", age: 21, willGraduate: true)
+            let ashley = Student(name: "Ashley", major: "Biology",
+                                          school: "Siena & Cornell University", age: 20, willGraduate: true)
+            let billy = Student(name: "Billy", major: "Business",
+                                         school: "Mira Costa Community", age: 22, willGraduate: false)
 
-            //Create 3 new students
-            let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell University", age: 21, willGraduate: true)
-            let ashley = Student(name: "Ashley", major: "Biology", school: "Siena & Cornell University", age: 20, willGraduate: true)
-            let billy = Student(name: "Billy", major: "Business", school: "Mira Costa Community", age: 22, willGraduate: false)
-
-            let _ = try await app.ferno.create(["Students-get"], body: austin)
-            let _ = try await app.ferno.create(["Students-get"], body: ashley)
-            let _ = try await app.ferno.create(["Students-get"], body: billy)
-
+            _ = try await app.ferno.create(["Students-get"], body: austin)
+            _ = try await app.ferno.create(["Students-get"], body: ashley)
+            _ = try await app.ferno.create(["Students-get"], body: billy)
 
             let names = ["Austin", "Ashley", "Billy"]
             let ages = ["Austin": 21, "Ashley": 20, "Billy": 22]
             let majors = ["Austin": "Computer Science", "Ashley": "Biology", "Billy": "Business"]
-            let schools = ["Austin": "Cornell University", "Ashley": "Siena & Cornell University", "Billy": "Mira Costa Community"]
-            let willGradaute = ["Austin": true, "Ashley": true, "Billy": false]
-
+            let schools = ["Austin": "Cornell University",
+                                              "Ashley": "Siena & Cornell University",
+                                              "Billy": "Mira Costa Community"]
+            let willGradaute = ["Austin": true,
+                                                 "Ashley": true,
+                                                 "Billy": false]
 
             let students: [Student] = try await app.ferno.retrieveMany("Students-get", queryItems: []).map { $0.value }
 
@@ -88,10 +74,11 @@ final class FirebaseTests: XCTestCase {
         }
     }
 
-    //POST Student
+    // POST Student
     func testCreateStudent() async throws {
-        try await launch { app in
-            let student = Student(name: "Matt", major: "Computer Science", school: "Cornell University", age: 20, willGraduate: true)
+        try await defaultLaunch { app in
+            let student = Student(name: "Matt", major: "Computer Science",
+                                           school: "Cornell University", age: 20, willGraduate: true)
             let child = try await app.ferno.create(body: student)
             XCTAssertNotNil(child.name)
 
@@ -101,10 +88,11 @@ final class FirebaseTests: XCTestCase {
         }
     }
 
-    //DELETE student
+    // DELETE student
     func testDeleteStudent() async throws {
-        try await launch { app in
-            let timothy = Student(name: "Timothy", major: "Agriculture", school: "Mira Costa Community", age: 24, willGraduate: false)
+        try await defaultLaunch { app in
+            let timothy = Student(name: "Timothy", major: "Agriculture",
+                                           school: "Mira Costa Community", age: 24, willGraduate: false)
 
             let child = try await app.ferno.create("Students-delete", body: timothy)
 
@@ -113,10 +101,11 @@ final class FirebaseTests: XCTestCase {
         }
     }
 
-    //PATCH update student
+    // PATCH update student
     func testUpdateStudent() async throws {
-        try await launch { app in
-            let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
+        try await defaultLaunch { app in
+            let austin = Student(name: "Austin", major: "Computer Science",
+                                          school: "Cornell Univeristy", age: 21, willGraduate: true)
             let child = try await app.ferno.create(["Students-patch"], body: austin)
 
             let updateStudentInfo = UpdateStudentInfo(major: "Cooking")
@@ -129,10 +118,11 @@ final class FirebaseTests: XCTestCase {
         }
     }
 
-    //PUT overwrite student
+    // PUT overwrite student
     func testOverwriteStudent() async throws {
-        try await launch { app in
-            let austin = Student(name: "Austin", major: "Computer Science", school: "Cornell Univeristy", age: 21, willGraduate: true)
+        try await defaultLaunch { app in
+            let austin = Student(name: "Austin", major: "Computer Science",
+                                          school: "Cornell Univeristy", age: 21, willGraduate: true)
             let child = try await app.ferno.create(["Students-put"], body: austin)
 
             let teacher = Teacher(name: "Ms. Jennifer", teachesGrade: "12th", age: 29)

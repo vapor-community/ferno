@@ -1,0 +1,14 @@
+name: test
+
+on:
+  pull_request: { types: [opened, reopened, synchronize, ready_for_review] }
+  push: { branches: [ master ] }
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: swift:5.9-jammy
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: swift build -v

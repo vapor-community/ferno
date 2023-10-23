@@ -7,7 +7,7 @@
 
 import Foundation
 
-//FernoQuery Enum
+// FernoQuery Enum
 
 public enum FernoQuery {
     case shallow(Bool)

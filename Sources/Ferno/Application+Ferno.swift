@@ -4,38 +4,52 @@ import JWT
 extension Application {
     /// The `Ferno` object
     public var ferno: Ferno { .init(application: self) }
-    
+
     public struct Ferno {
-        
+
         struct Key: StorageKey {
             typealias Value = Storage
         }
-        
+
         /// The provider of the `Ferno` configuration
         public struct Provider {
-            let run: (Application) -> ()
+            let run: (Application) -> Void
 
-            public init(_ run: @escaping (Application) -> ()) {
+            public init(_ run: @escaping (Application) -> Void) {
                 self.run = run
             }
-            
+            @available(*, deprecated)
             public static func `default`(_ configuration: FernoConfiguration) -> Self {
                 .init { app in
                     app.ferno.use(configuration)
-                    app.ferno.use(custom: DefaultFernoDriver(client: app.client))
+                    app.ferno.use(custom: FernoDefaultDriver(client: app.client))
+                }
+            }
+            
+            public static func `default`(_ configuration: FernoDefaultConfiguration) -> Self {
+                .init { app in
+                    app.ferno.use(configuration)
+                    app.ferno.use(custom: FernoDefaultDriver(client: app.client))
+                }
+            }
+
+            public static func serviceAccountKey(_ configuration: FernoServiceJsonConfiguration) -> Self {
+                .init { app in
+                    app.ferno.use(configuration)
+                    app.ferno.use(custom: FernoServiceAccountKeyDriver(client: app.client))
                 }
             }
         }
-        
+
         final class Storage {
-            public var configuration: FernoConfiguration
+            public var configuration: FernoConfigurationProvider
             public var driver: FernoDriver?
 
-            public init(config: FernoConfiguration) {
+            public init(config: FernoConfigurationProvider) {
                 self.configuration = config
             }
         }
-        
+
         struct Lifecycle: LifecycleHandler {
             func shutdown(_ application: Application) {
                 if let driver = application.ferno.storage.driver {
@@ -43,11 +57,11 @@ extension Application {
                 }
             }
         }
-        
+
         public let application: Application
-        
+
         /// The `FernoConfiguration` object
-        public var configuration: FernoConfiguration {
+        public var configuration: any FernoConfigurationProvider {
             get { self.storage.configuration }
             nonmutating set { self.storage.configuration = newValue }
         }
@@ -59,38 +73,38 @@ extension Application {
             }
             return driver
         }
-        
+
         var storage: Storage {
             guard let storage = self.application.storage[Key.self] else {
                 fatalError("No Ferno configuration found. Configure with app.ferno.use(...)")
             }
             return storage
         }
-        
+
         var client: FernoClient { driver.makeClient(with: configuration) }
-        
+
         func initialize() {
             self.application.lifecycle.use(Lifecycle())
         }
-        
+
         public func use(_ provider: Provider) {
             provider.run(self.application)
         }
-        
-        public func use(_ config: FernoConfiguration) {
+
+        public func use(_ config: FernoConfigurationProvider) {
             self.application.storage[Key.self] = .init(config: config)
             self.initialize()
         }
-        
+
         public func use(custom driver: FernoDriver) {
             self.storage.driver = driver
         }
-        
+
     }
 }
 
 extension Application.Ferno {
-    
+
     /// Deletes everything
     public func delete(_ path: String...) async throws -> Bool {
         try await self.delete(path)
@@ -120,9 +134,8 @@ extension Application.Ferno {
     }
 }
 
-
 extension Application.Ferno {
-    
+
     /// Deletes everything
     public func delete(_ path: [String]) async throws -> Bool {
         try await self.client.delete(method: .DELETE, path: path)
@@ -138,7 +151,6 @@ extension Application.Ferno {
             headers: [:]
         )
     }
-
 
     /// Overwrites everything at that location with the data
     public func overwrite<T: Content>(_ path: [String], body: T) async throws -> T {

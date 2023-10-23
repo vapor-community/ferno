@@ -10,14 +10,20 @@ import Vapor
 /// A new driver for Ferno
 public protocol FernoDriver {
     /// Makes the ferno client
-    func makeClient(with config: FernoConfiguration) -> FernoClient
-    
+    func makeClient(with config: FernoConfigurationProvider) -> FernoClient
+
     /// Shuts down the driver
     func shutdown()
 }
 
-struct DefaultFernoDriver: FernoDriver {
+struct FernoDefaultDriver: FernoDriver {
     var client: Client
-    func makeClient(with config: FernoConfiguration) -> FernoClient { FernoAPIClient(configuration: config, client: client) }
+    func makeClient(with config: FernoConfigurationProvider) -> FernoClient { FernoAPIClient(configuration: config, client: client) }
+    func shutdown() {}
+}
+
+struct FernoServiceAccountKeyDriver: FernoDriver {
+    var client: Client
+    func makeClient(with config: FernoConfigurationProvider) -> FernoClient { FernoAPIClient(configuration: config, client: client) }
     func shutdown() {}
 }
