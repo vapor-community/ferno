@@ -1,4 +1,4 @@
-# ![Ferno 🔥](https://github.com/vapor-community/firebase-provider/blob/master/screenshots/FERNO.png)
+# ![Ferno 🔥](https://github.com/vapor-community/firebase-provider/blob/main/screenshots/FERNO.png)
 
 Ferno allows you to easily connect your Vapor project with your Firebase realtime database. It is built with the brand new Vapor 4. It gives you a nice and clean interface to interact with the Firebase Realtime REST API. It will automatically turn the response into your class/struct! 
 
